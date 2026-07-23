@@ -60,6 +60,15 @@ pnpm build
 pnpm format:check
 ```
 
+## Desarrollo con contenedores
+
+```bash
+docker compose up --build
+```
+
+Consulta [la guía de contenedores](docker/README.md) para los servicios y
+puertos disponibles.
+
 ## Principios
 
 - Un solo índice IICA, siempre personalizado y explicable.

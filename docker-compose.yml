@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: iica
+      POSTGRES_USER: iica
+      POSTGRES_PASSWORD: iica
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U iica -d iica']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports: ['5432:5432']
+    volumes: [postgres-data:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine
+    ports: ['6379:6379']
+    volumes: [redis-data:/data]
+
+  api:
+    build: { context: ., dockerfile: docker/api.Dockerfile }
+    environment:
+      DATABASE_URL: postgresql+psycopg://iica:iica@postgres:5432/iica
+      IICA_ADMIN_API_KEY: local-development-only
+    depends_on:
+      postgres: { condition: service_healthy }
+    command: sh -c "alembic -c database/alembic.ini upgrade head && uvicorn presentation.http.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports: ['8000:8000']
+    volumes: [.:/workspace]
+
+  web:
+    build: { context: ., dockerfile: docker/web.Dockerfile }
+    depends_on: [api]
+    ports: ['3000:3000']
+    volumes: [.:/workspace, web-node-modules:/workspace/node_modules]
+
+  admin:
+    build: { context: ., dockerfile: docker/admin.Dockerfile }
+    depends_on: [api]
+    ports: ['3001:3001']
+    volumes: [.:/workspace, admin-node-modules:/workspace/node_modules]
+
+volumes:
+  postgres-data:
+  redis-data:
+  web-node-modules:
+  admin-node-modules:
