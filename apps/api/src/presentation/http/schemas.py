@@ -55,3 +55,17 @@ class BrandResponse(BaseModel):
     name: str
     slug: str
     active: bool
+
+
+class TaxRuleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    country_code: str
+    city_id: UUID | None
+    tax_kind: str
+    rate_percentage: Decimal
+    effective_from: str
+    effective_to: str | None
+    source_url: str

@@ -10,6 +10,7 @@ from sqlalchemy import select
 from infrastructure.persistence.models import (
     City,
     Country,
+    TaxRule,
     VehicleBrand,
     VehicleModel,
     VehicleVersion,
@@ -20,11 +21,32 @@ from presentation.http.schemas import (
     CityResponse,
     CountryResponse,
     CreateBrandRequest,
+    TaxRuleResponse,
     VehicleDetailResponse,
     VehicleSummaryResponse,
 )
 
 router = APIRouter(prefix="/v1", tags=["catalog"])
+
+
+@router.get("/vehicle-brands", response_model=list[BrandResponse])
+def list_vehicle_brands(session: DatabaseSession) -> list[VehicleBrand]:
+    """Lista las marcas activas disponibles en el catálogo."""
+
+    return list(session.scalars(select(VehicleBrand).order_by(VehicleBrand.name)))
+
+
+@router.get("/tax-rules", response_model=list[TaxRuleResponse], tags=["rules"])
+def list_tax_rules(session: DatabaseSession, country_code: str = "CO") -> list[TaxRule]:
+    """Expone reglas tributarias vigentes para auditoría de la recomendación."""
+
+    return list(
+        session.scalars(
+            select(TaxRule)
+            .where(TaxRule.country_code == country_code.upper())
+            .order_by(TaxRule.effective_from.desc())
+        )
+    )
 
 
 @router.get("/countries", response_model=list[CountryResponse])
