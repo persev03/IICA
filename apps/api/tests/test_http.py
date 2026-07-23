@@ -4,7 +4,12 @@ from os import environ
 from unittest import TestCase
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
+from infrastructure.persistence.models import Base, Country
+from infrastructure.persistence.session import get_session
 from presentation.http.main import app
 
 
@@ -30,3 +35,40 @@ class HealthEndpointTests(TestCase):
                 environ["IICA_ADMIN_API_KEY"] = original_value
 
         self.assertEqual(response.status_code, 503)
+
+
+class CatalogIntegrationTests(TestCase):
+    def setUp(self) -> None:
+        engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        Base.metadata.create_all(engine)
+        session_factory = sessionmaker(bind=engine)
+
+        with session_factory() as session:
+            session.add(Country(code="CO", name="Colombia", currency_code="COP"))
+            session.commit()
+
+        def override_session():
+            session = session_factory()
+            try:
+                yield session
+            finally:
+                session.close()
+
+        app.dependency_overrides[get_session] = override_session
+        self.client = TestClient(app)
+
+    def tearDown(self) -> None:
+        app.dependency_overrides.clear()
+
+    def test_lists_countries_from_the_persistence_adapter(self) -> None:
+        response = self.client.get("/v1/countries")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [{"code": "CO", "name": "Colombia", "currency_code": "COP"}],
+        )
