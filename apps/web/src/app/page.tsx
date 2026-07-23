@@ -36,10 +36,7 @@ export default function Home() {
             única, objetiva y fácil de entender.
           </p>
           <div className="hero-actions" id="calcular">
-            <a
-              className="button button-primary"
-              href="mailto:hola@iica.app?subject=Quiero%20calcular%20mi%20IICA"
-            >
+            <a className="button button-primary" href="/calculadora">
               Calcular mi IICA <span aria-hidden="true">↗</span>
             </a>
             <a className="button button-quiet" href="#metodo">
