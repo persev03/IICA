@@ -2,7 +2,7 @@ name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [codex/fase-1-arquitectura]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
