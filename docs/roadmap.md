@@ -4,7 +4,7 @@
 | ---- | ------------------------------------------------------- | ---------- |
 | 1    | Monorepo, arquitectura, calidad y landing base          | Completada |
 | 2    | Modelo de dominio y contratos del motor                 | Completada |
-| 3    | Esquema PostgreSQL, migraciones y datos semilla         | Pendiente  |
+| 3    | Esquema PostgreSQL, migraciones y datos semilla         | Completada |
 | 4    | API FastAPI, autenticación y OpenAPI                    | Pendiente  |
 | 5    | Flujos web: perfil, vehículos, calculadora y resultados | Pendiente  |
 | 6    | Motor IICA, explicabilidad y pruebas de reglas          | Pendiente  |
