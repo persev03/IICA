@@ -6,11 +6,12 @@ en un lugar y momento determinados. Su salida es un único índice explicable de
 
 ## Estado
 
-Se completaron las fases de **arquitectura**, **modelo de dominio** y
-**persistencia**. El repositorio contiene un monorepo preparado para la web,
-API, panel administrativo, motor reutilizable, migraciones PostgreSQL y
-documentación de decisión técnica. La landing de `apps/web` es una primera
-expresión de producto, no un cálculo real del índice.
+Se completaron las fases de **arquitectura**, **modelo de dominio**,
+**persistencia** y **API**. El repositorio contiene un monorepo preparado para
+la web, API, panel administrativo, motor reutilizable, migraciones PostgreSQL,
+contratos OpenAPI y documentación de decisión técnica. La landing de
+`apps/web` es una primera expresión de producto, no un cálculo real del
+índice.
 
 ## Estructura
 
@@ -47,6 +48,8 @@ source .venv/bin/activate
 pip install -e '.[dev]'
 uvicorn src.presentation.http.main:app --reload
 ```
+
+La documentación interactiva estará en [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ## Calidad
 

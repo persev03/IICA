@@ -7,7 +7,14 @@ FastAPI atraviese los límites del dominio.
 
 from fastapi import FastAPI
 
-app = FastAPI(title="IICA API", version="0.1.0")
+from presentation.http.routers.catalog import router as catalog_router
+
+app = FastAPI(
+    title="IICA API",
+    version="0.4.0",
+    description="API del Índice Inteligente de Compra de Automóviles.",
+)
+app.include_router(catalog_router)
 
 
 @app.get("/health", tags=["system"])

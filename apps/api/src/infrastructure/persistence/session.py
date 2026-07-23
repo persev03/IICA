@@ -6,7 +6,9 @@ from os import getenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-_DATABASE_URL = getenv("DATABASE_URL", "postgresql+psycopg://iica:iica@localhost:5432/iica")
+_DATABASE_URL = getenv(
+    "DATABASE_URL", "postgresql+psycopg://iica:iica@localhost:5432/iica"
+)
 
 engine = create_engine(_DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

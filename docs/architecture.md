@@ -30,6 +30,14 @@ La aplicación `apps/api/src` se divide en:
 Las dependencias siempre apuntan hacia el dominio. Por ello, cambiar el
 proveedor de datos o añadir una app móvil no modifica el cálculo del IICA.
 
+## API pública y administración
+
+La API publica OpenAPI automáticamente en `/openapi.json` y documentación
+interactiva en `/docs`. Las consultas de catálogo son públicas. Las mutaciones
+administrativas requieren `X-Admin-API-Key`, cargada únicamente desde entorno;
+este límite temporal será sustituido por roles y sesiones de Auth.js cuando se
+incorpore la identidad de usuarios en los flujos web.
+
 ## Datos regulados por administración
 
 País, ciudad, impuestos, incentivos, devolución de IVA, restricciones de

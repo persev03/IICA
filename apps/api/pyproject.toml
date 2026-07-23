@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy>=1.11", "pytest>=8.0", "ruff>=0.6"]
+dev = ["httpx2>=0.1", "mypy>=1.11", "pytest>=8.0", "ruff>=0.6"]
 
 [build-system]
 requires = ["setuptools>=69"]

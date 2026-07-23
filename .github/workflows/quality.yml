@@ -33,4 +33,6 @@ jobs:
           python-version: '3.11'
       - run: pip install -e 'apps/api[dev]'
       - run: ruff check apps/api
+      - run: mypy apps/api/src
       - run: pytest apps/api
+      - run: alembic -c database/alembic.ini upgrade head --sql > /dev/null
