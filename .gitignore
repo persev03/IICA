@@ -1,0 +1,18 @@
+# Node
+node_modules/
+.next/
+dist/
+coverage/
+.turbo/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Environment and local tooling
+.env
+.env.*
+!.env.example
+.DS_Store
