@@ -102,6 +102,42 @@
   line-height: 1.4;
   margin: 0;
 }
+.form-kicker {
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.profile-form h2 {
+  font-size: 30px;
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+.form-copy {
+  color: #b6b4ad;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: -8px 0 4px;
+}
+.profile-form small {
+  color: var(--muted);
+  font-weight: 400;
+}
+.text-button {
+  background: transparent;
+  border: 0;
+  color: #c9c7bf;
+  cursor: pointer;
+  font: inherit;
+  justify-self: start;
+  padding: 0;
+}
+.result-pending {
+  align-content: center;
+  min-height: 420px;
+}
 @media (max-width: 760px) {
   .calculator-shell {
     padding: 56px 22px;
