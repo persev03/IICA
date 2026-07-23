@@ -7,7 +7,7 @@
 | 3    | Esquema PostgreSQL, migraciones y datos semilla      | Completada |
 | 4    | API FastAPI, protección administrativa y OpenAPI     | Completada |
 | 5    | Flujos web, Auth.js, perfil, vehículos y calculadora | Pendiente  |
-| 6    | Motor IICA, explicabilidad y pruebas de reglas       | Pendiente  |
+| 6    | Motor IICA, explicabilidad y pruebas de reglas       | Completada |
 | 7    | Panel administrativo de datos y reglas locales       | Pendiente  |
 | 8    | Pruebas de integración, accesibilidad y CI           | Pendiente  |
 | 9    | Contenedores y configuración de despliegue           | Pendiente  |

@@ -41,7 +41,7 @@ class EvaluationInputTests(TestCase):
         buyer = BuyerProfile(
             country_code="CO",
             city_code="bogota",
-            budget=Money(Decimal("100000000"), "cop"),
+            budget=Money(Decimal(100000000), "cop"),
             annual_kilometers=12000,
             ownership_years=5,
             primary_use=VehicleUse.MIXED,
@@ -55,10 +55,10 @@ class EvaluationInputTests(TestCase):
             model="Reference",
             trim="Base",
             model_year=2026,
-            purchase_price=Money(Decimal("95000000"), "COP"),
+            purchase_price=Money(Decimal(95000000), "COP"),
             powertrain=Powertrain.HYBRID,
             seats=5,
-            safety_score=Score(Decimal("88")),
+            safety_score=Score(Decimal(88)),
             warranty_months=60,
         )
         environment = EnvironmentProfile(
@@ -66,8 +66,8 @@ class EvaluationInputTests(TestCase):
             city_code="medellin",
             rules_version="2026-01",
             effective_on="2026-01-01",
-            annual_vehicle_tax=Money(Decimal("1000000"), "COP"),
-            purchase_incentive=Money(Decimal("0"), "COP"),
+            annual_vehicle_tax=Money(Decimal(1000000), "COP"),
+            purchase_incentive=Money(Decimal(0), "COP"),
             mobility_restriction_days_per_month=4,
             has_electric_exemption=True,
             public_charging_points=200,
@@ -75,8 +75,8 @@ class EvaluationInputTests(TestCase):
         market = MarketProfile(
             as_of="2026-01-01",
             expected_annual_depreciation_percentage=Decimal("12.5"),
-            liquidity_score=Score(Decimal("80")),
-            owner_satisfaction_score=Score(Decimal("85")),
+            liquidity_score=Score(Decimal(80)),
+            owner_satisfaction_score=Score(Decimal(85)),
         )
 
         with self.assertRaises(ValueError):

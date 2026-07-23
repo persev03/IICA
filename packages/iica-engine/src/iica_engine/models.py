@@ -6,10 +6,10 @@ objetos inmutables representan las entradas y la salida explicable del motor.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from enum import Enum
-from typing import Sequence
 
 
 class VehicleUse(str, Enum):
@@ -86,7 +86,7 @@ class Score:
         except (InvalidOperation, ValueError, TypeError) as error:
             raise ValueError("value debe ser una puntuación válida.") from error
 
-        if not Decimal("0") <= normalized_value <= Decimal("100"):
+        if not Decimal(0) <= normalized_value <= Decimal(100):
             raise ValueError("La puntuación IICA debe estar entre 0 y 100.")
         object.__setattr__(self, "value", normalized_value.quantize(Decimal("0.01")))
 
@@ -211,7 +211,7 @@ class MarketProfile:
             depreciation = Decimal(self.expected_annual_depreciation_percentage)
         except (InvalidOperation, ValueError, TypeError) as error:
             raise ValueError("La depreciación esperada debe ser válida.") from error
-        if not Decimal("0") <= depreciation <= Decimal("100"):
+        if not Decimal(0) <= depreciation <= Decimal(100):
             raise ValueError("La depreciación anual debe estar entre 0 y 100.")
         if not self.as_of.strip():
             raise ValueError("as_of es obligatorio.")
