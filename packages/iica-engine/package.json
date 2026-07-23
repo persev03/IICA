@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_*.py'"
   }
 }

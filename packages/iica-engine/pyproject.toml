@@ -1,0 +1,16 @@
+[project]
+name = "iica-engine"
+version = "0.2.0"
+description = "Dominio y contratos del Índice Inteligente de Compra de Automóviles"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = ["mypy>=1.11", "pytest>=8.0", "ruff>=0.6"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"

@@ -6,10 +6,11 @@ en un lugar y momento determinados. Su salida es un único índice explicable de
 
 ## Estado
 
-Se completó la **Fase 1 — arquitectura del proyecto**. Incluye un monorepo
-preparado para la web, API, panel administrativo, motor reutilizable y
-documentación de decisión técnica. La landing de `apps/web` es una primera
-expresión de producto, no un cálculo real del índice.
+Se completaron la **Fase 1 — arquitectura** y la **Fase 2 — modelo de
+dominio**. El repositorio contiene un monorepo preparado para la web, API,
+panel administrativo, motor reutilizable y documentación de decisión técnica.
+La landing de `apps/web` es una primera expresión de producto, no un cálculo
+real del índice.
 
 ## Estructura
 
