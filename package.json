@@ -5,8 +5,8 @@
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "dev": "pnpm --filter @iica/web dev",
-    "build": "pnpm --filter @iica/web build",
-    "lint": "pnpm --filter @iica/web lint",
+    "build": "pnpm --filter @iica/web --filter @iica/admin build",
+    "lint": "pnpm --filter @iica/web --filter @iica/admin lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm --filter @iica/iica-engine test"
