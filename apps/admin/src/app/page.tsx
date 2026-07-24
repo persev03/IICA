@@ -3,6 +3,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
+import { AdminForms } from '../components/admin-forms';
 import { supabase } from '../lib/supabase';
 
 const apiUrl =
@@ -23,7 +24,6 @@ export default function AdminHome() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [counts, setCounts] = useState<Counts>({});
-  const [showNewBrand, setShowNewBrand] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
 
   const loadCounts = useCallback(async () => {
@@ -100,33 +100,6 @@ export default function AdminHome() {
         ? 'No fue posible enviar el enlace. Verifica el correo e inténtalo de nuevo.'
         : 'Revisa tu correo: enviamos un enlace seguro para entrar.',
     );
-  }
-
-  async function createBrand(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!session) return;
-    setMessage('');
-    const form = new FormData(event.currentTarget);
-    const response = await fetch(`${apiUrl}/v1/admin/vehicle-brands`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: String(form.get('name')),
-        slug: String(form.get('slug')),
-      }),
-    });
-    if (!response.ok) {
-      const payload = (await response.json()) as { detail?: string };
-      setMessage(payload.detail ?? 'No fue posible crear la marca.');
-      return;
-    }
-    setMessage('Marca creada correctamente.');
-    setShowNewBrand(false);
-    event.currentTarget.reset();
-    await loadCounts();
   }
 
   if (loading) {
@@ -214,30 +187,9 @@ export default function AdminHome() {
             <p>Administración</p>
             <h1>Datos que sostienen cada IICA.</h1>
           </div>
-          <button type="button" onClick={() => setShowNewBrand((visible) => !visible)}>
-            {showNewBrand ? 'Cancelar' : '+ Nueva marca'}
-          </button>
         </header>
         {message ? <div className="admin-message">{message}</div> : null}
-        {showNewBrand ? (
-          <form className="admin-form" onSubmit={createBrand}>
-            <h2>Nueva marca</h2>
-            <label>
-              Nombre
-              <input name="name" required maxLength={120} />
-            </label>
-            <label>
-              Identificador
-              <input
-                name="slug"
-                required
-                pattern="[a-z0-9-]+"
-                placeholder="ej. marca-vehiculo"
-              />
-            </label>
-            <button type="submit">Guardar marca</button>
-          </form>
-        ) : null}
+        <AdminForms session={session} onComplete={loadCounts} onMessage={setMessage} />
         <div className="notice">
           Las reglas vigentes requieren fuente, ciudad y fecha de aplicación. Ningún
           dato publicado altera cálculos históricos.
