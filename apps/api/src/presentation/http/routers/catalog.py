@@ -391,7 +391,20 @@ def create_tax_rule(
         name=payload.name,
         tax_kind=payload.tax_kind,
         rate_percentage=payload.rate_percentage,
-        conditions={},
+        conditions={
+            **({"powertrain": payload.powertrain} if payload.powertrain else {}),
+            **(
+                {"minimum_value": str(payload.minimum_value)}
+                if payload.minimum_value is not None
+                else {}
+            ),
+            **(
+                {"maximum_value": str(payload.maximum_value)}
+                if payload.maximum_value is not None
+                else {}
+            ),
+            "discount_percentage": str(payload.discount_percentage),
+        },
         effective_from=payload.effective_from,
         effective_to=payload.effective_to,
         source_url=str(payload.source_url),

@@ -19,7 +19,7 @@ from .models import (
 class DeterministicIicaEngine:
     """Calcula una primera versión calibrable del IICA sin dependencias externas."""
 
-    VERSION = "0.7.0"
+    VERSION = "0.8.0"
 
     def evaluate(self, evaluation_input: EvaluationInput) -> EvaluationResult:
         """Entrega una sola puntuación y sus razones más relevantes."""
@@ -29,8 +29,14 @@ class DeterministicIicaEngine:
         environment = evaluation_input.environment
         market = evaluation_input.market
 
+        effective_cost = max(
+            Decimal(0),
+            vehicle.purchase_price.amount
+            + environment.annual_vehicle_tax.amount
+            - environment.purchase_incentive.amount,
+        )
         budget_fit = self._budget_fit(
-            vehicle.purchase_price.amount,
+            effective_cost,
             buyer.budget.amount,
         )
         mobility_fit = self._mobility_fit(evaluation_input)
@@ -43,7 +49,7 @@ class DeterministicIicaEngine:
                 "presupuesto",
                 budget_fit,
                 Decimal(25),
-                "El precio se ajusta al presupuesto declarado.",
+                "El costo efectivo, incluidos impuestos e incentivos, se ajusta al presupuesto.",
             ),
             (
                 "seguridad",

@@ -112,6 +112,10 @@ class CreateTaxRuleRequest(BaseModel):
     name: str = Field(min_length=1, max_length=160)
     tax_kind: str = Field(min_length=1, max_length=48)
     rate_percentage: Decimal = Field(ge=0, le=100)
+    powertrain: str | None = None
+    minimum_value: Decimal | None = Field(default=None, ge=0)
+    maximum_value: Decimal | None = Field(default=None, ge=0)
+    discount_percentage: Decimal = Field(default=Decimal(0), ge=0, le=100)
     effective_from: date
     effective_to: date | None = None
     source_url: AnyHttpUrl

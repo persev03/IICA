@@ -108,8 +108,12 @@ function payloadFor(kind: FormKind, form: FormData): object {
     country_code: value(form, 'country_code'),
     city_code: optionalValue(form, 'city_code'),
     name: value(form, 'name'),
-    tax_kind: value(form, 'tax_kind'),
-    rate_percentage: numberValue(form, 'rate_percentage'),
+      tax_kind: value(form, 'tax_kind'),
+      rate_percentage: numberValue(form, 'rate_percentage'),
+      powertrain: optionalValue(form, 'powertrain'),
+      minimum_value: optionalNumberValue(form, 'minimum_value'),
+      maximum_value: optionalNumberValue(form, 'maximum_value'),
+      discount_percentage: numberValue(form, 'discount_percentage'),
     effective_from: value(form, 'effective_from'),
     effective_to: optionalValue(form, 'effective_to'),
     source_url: value(form, 'source_url'),
@@ -370,6 +374,14 @@ function AdminFields({ kind }: { kind: FormKind }) {
       <Field label="Ciudad (opcional)" name="city_code" required={false} />
       <Field label="Nombre de la regla" name="name" />
       <Field label="Tipo de impuesto" name="tax_kind" />
+      <SelectField label="Motorización" name="powertrain" required={false}>
+        <option value="">Todas</option>
+        <option value="gasoline">Gasolina</option>
+        <option value="diesel">Diésel</option>
+        <option value="hybrid">Híbrido</option>
+        <option value="plug_in_hybrid">Híbrido enchufable</option>
+        <option value="electric">Eléctrico</option>
+      </SelectField>
       <Field
         label="Tasa %"
         name="rate_percentage"
@@ -377,6 +389,31 @@ function AdminFields({ kind }: { kind: FormKind }) {
         min="0"
         max="100"
         step="0.0001"
+      />
+      <Field
+        label="Valor mínimo (opcional)"
+        name="minimum_value"
+        type="number"
+        min="0"
+        step="0.01"
+        required={false}
+      />
+      <Field
+        label="Valor máximo (opcional)"
+        name="maximum_value"
+        type="number"
+        min="0"
+        step="0.01"
+        required={false}
+      />
+      <Field
+        label="Descuento %"
+        name="discount_percentage"
+        type="number"
+        min="0"
+        max="100"
+        step="0.01"
+        defaultValue="0"
       />
       <Field label="Vigente desde" name="effective_from" type="date" />
       <Field

@@ -22,7 +22,7 @@ class DeterministicEngineTests(TestCase):
             buyer=BuyerProfile(
                 "CO",
                 "bogota",
-                Money(Decimal(100000000), "COP"),
+                Money(Decimal(95000000), "COP"),
                 12000,
                 5,
                 VehicleUse.MIXED,
@@ -59,12 +59,33 @@ class DeterministicEngineTests(TestCase):
             engine_version="0.6.0",
         )
 
-        result = DeterministicIicaEngine().evaluate(evaluation_input)
+        engine = DeterministicIicaEngine()
+        result = engine.evaluate(evaluation_input)
 
-        self.assertEqual(result.score.value, Decimal("80.25"))
-        self.assertEqual(result.engine_version, "0.7.0")
+        self.assertEqual(result.score.value, Decimal("79.72"))
+        self.assertEqual(result.engine_version, "0.8.0")
         self.assertEqual(result.data_version, "rules-1:2026-01-01")
         self.assertEqual(len(result.explanation.influences), 3)
+
+        incentivized_input = EvaluationInput(
+            buyer=evaluation_input.buyer,
+            vehicle=evaluation_input.vehicle,
+            environment=EnvironmentProfile(
+                "CO",
+                "bogota",
+                "rules-1-with-incentive",
+                "2026-01-01",
+                Money(Decimal(1000000), "COP"),
+                Money(Decimal(2000000), "COP"),
+                4,
+                False,
+                100,
+            ),
+            market=evaluation_input.market,
+            engine_version="0.8.0",
+        )
+        incentivized = engine.evaluate(incentivized_input)
+        self.assertGreater(incentivized.score.value, result.score.value)
 
     def test_renormalizes_weights_when_market_signals_are_unavailable(self) -> None:
         evaluation_input = EvaluationInput(

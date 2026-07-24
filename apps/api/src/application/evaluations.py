@@ -183,7 +183,11 @@ def _evaluate_one(
 
     market = _market_profile(version, brand_name, model_name)
     tax_rate, tax_version = _active_tax_rate(
-        session, city, evaluation_date
+        session,
+        city,
+        powertrain.value,
+        version.list_price,
+        evaluation_date,
     )
     incentive, incentive_version = _active_incentive(
         session, city, powertrain.value, version.currency_code, evaluation_date
@@ -328,9 +332,13 @@ def _active_restriction(
 
 
 def _active_tax_rate(
-    session: Session, city: City, evaluation_date: date
+    session: Session,
+    city: City,
+    powertrain: str,
+    vehicle_value: Decimal,
+    evaluation_date: date,
 ) -> tuple[Decimal, str]:
-    rule = session.scalar(
+    rules = session.scalars(
         select(TaxRule)
         .where(
             TaxRule.country_code == city.country_code,
@@ -339,11 +347,33 @@ def _active_tax_rate(
             or_(TaxRule.effective_to.is_(None), TaxRule.effective_to >= evaluation_date),
         )
         .order_by(TaxRule.city_id.desc(), TaxRule.effective_from.desc())
-        .limit(1)
+    ).all()
+    rule = next(
+        (
+            candidate
+            for candidate in rules
+            if _tax_rule_applies(candidate, powertrain, vehicle_value)
+        ),
+        None,
     )
     if rule is None:
         return Decimal(0), "none"
-    return rule.rate_percentage, str(rule.id)
+    discount = Decimal(str(rule.conditions.get("discount_percentage", 0)))
+    effective_rate = rule.rate_percentage * (Decimal(100) - discount) / Decimal(100)
+    return effective_rate, str(rule.id)
+
+
+def _tax_rule_applies(
+    rule: TaxRule, powertrain: str, vehicle_value: Decimal
+) -> bool:
+    configured_powertrain = rule.conditions.get("powertrain")
+    if configured_powertrain and configured_powertrain != powertrain:
+        return False
+    minimum = rule.conditions.get("minimum_value")
+    if minimum is not None and vehicle_value < Decimal(str(minimum)):
+        return False
+    maximum = rule.conditions.get("maximum_value")
+    return not (maximum is not None and vehicle_value > Decimal(str(maximum)))
 
 
 def _active_incentive(

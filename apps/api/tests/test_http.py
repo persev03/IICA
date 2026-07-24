@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from application.evaluations import _active_tax_rate
 from infrastructure.persistence.models import (
     Base,
     City,
@@ -17,6 +18,7 @@ from infrastructure.persistence.models import (
     Incentive,
     InfrastructureSnapshot,
     MobilityRestriction,
+    TaxRule,
     VehicleBrand,
     VehicleModel,
     VehicleVersion,
@@ -110,6 +112,53 @@ class CatalogIntegrationTests(TestCase):
         self.assertEqual(payload[0]["name"], "Beneficio verificable")
         self.assertEqual(payload[0]["amount"], "1000000.00")
         self.assertEqual(payload[0]["powertrain"], "electric")
+
+    def test_tax_rules_respect_powertrain_and_value_range(self) -> None:
+        engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        Base.metadata.create_all(engine)
+        session_factory = sessionmaker(bind=engine)
+        with session_factory() as session:
+            country = Country(code="CO", name="Colombia", currency_code="COP")
+            city = City(country_code="CO", code="bogota", name="Bogotá")
+            session.add_all([country, city])
+            session.flush()
+            session.add(
+                TaxRule(
+                    country_code="CO",
+                    city_id=city.id,
+                    name="Híbridos 2026",
+                    tax_kind="vehicle_ownership",
+                    rate_percentage=Decimal("2.7"),
+                    conditions={
+                        "powertrain": "hybrid",
+                        "minimum_value": "57349000.01",
+                        "maximum_value": "129032000",
+                        "discount_percentage": "40",
+                    },
+                    effective_from=date(2026, 1, 1),
+                    effective_to=date(2026, 12, 31),
+                    source_url="https://example.com/tax",
+                )
+            )
+            session.commit()
+
+            hybrid_rate, _ = _active_tax_rate(
+                session, city, "hybrid", Decimal(89900000), date(2026, 7, 24)
+            )
+            gasoline_rate, _ = _active_tax_rate(
+                session, city, "gasoline", Decimal(89900000), date(2026, 7, 24)
+            )
+            expensive_rate, _ = _active_tax_rate(
+                session, city, "hybrid", Decimal(130000000), date(2026, 7, 24)
+            )
+
+        self.assertEqual(hybrid_rate, Decimal("1.62"))
+        self.assertEqual(gasoline_rate, Decimal(0))
+        self.assertEqual(expensive_rate, Decimal(0))
 
 
 class EvaluationIntegrationTests(TestCase):
