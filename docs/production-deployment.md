@@ -76,7 +76,7 @@ Variables de la web:
 ```text
 NEXT_PUBLIC_IICA_API_URL=https://iica-api-....run.app
 NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 NEXT_PUBLIC_BASE_PATH=
 ```
 
@@ -103,7 +103,7 @@ Configura en **Settings → Secrets and variables → Actions → Variables**:
 
 - `IICA_API_URL`
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+- `SUPABASE_PUBLISHABLE_KEY`
 
 Una nueva ejecución de `Deploy web to GitHub Pages` incorporará esas URLs al
 sitio estático.

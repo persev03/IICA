@@ -118,8 +118,8 @@ export default function AdminHome() {
         <p>Configuración pendiente</p>
         <h1>Conecta Supabase para habilitar la administración.</h1>
         <span>
-          Define NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY durante el
-          despliegue.
+          Define NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY durante
+          el despliegue.
         </span>
       </main>
     );
