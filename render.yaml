@@ -27,7 +27,7 @@ services:
     runtime: static
     repo: https://github.com/persev03/IICA
     branch: main
-    buildCommand: corepack enable && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter @iica/admin build
+    buildCommand: pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter @iica/admin build
     staticPublishPath: ./apps/admin/out
     autoDeployTrigger: checksPass
     envVars:
