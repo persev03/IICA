@@ -14,6 +14,10 @@ La URL resultante `https://iica-api.onrender.com` debe guardarse como variable
 `IICA_API_URL` del repositorio en GitHub. Las instancias gratuitas pueden
 suspenderse por inactividad y tardar en responder en el primer acceso.
 
+El mismo Blueprint publica el panel estático en
+`https://iica-admin.onrender.com`. En Supabase Auth, agrega esa URL tanto como
+Site URL como en la lista de Redirect URLs para habilitar el enlace mágico.
+
 La arquitectura objetivo usa tres servicios:
 
 - **Cloudflare Pages** publica `apps/web/out` y `apps/admin/out`.

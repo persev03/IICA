@@ -14,10 +14,26 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: IICA_ALLOWED_ORIGINS
-        value: https://persev03.github.io
+        value: https://persev03.github.io,https://iica-admin.onrender.com
       - key: SUPABASE_URL
         value: https://wvadbakdrbhbtihhkpjl.supabase.co
       - key: SUPABASE_ADMIN_EMAILS
         sync: false
       - key: IICA_ADMIN_API_KEY
         generateValue: true
+
+  - type: web
+    name: iica-admin
+    runtime: static
+    repo: https://github.com/persev03/IICA
+    branch: main
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter @iica/admin build
+    staticPublishPath: ./apps/admin/out
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NEXT_PUBLIC_IICA_API_URL
+        value: https://iica-api.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://wvadbakdrbhbtihhkpjl.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_Go3mF9k9BKMZ5cPjey1AHA_LOJKIxKE

@@ -24,6 +24,7 @@ export default function AdminHome() {
   const [message, setMessage] = useState('');
   const [counts, setCounts] = useState<Counts>({});
   const [showNewBrand, setShowNewBrand] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
 
   const loadCounts = useCallback(async () => {
     const endpoints = {
@@ -81,6 +82,26 @@ export default function AdminHome() {
     if (error) setMessage('No fue posible iniciar sesión. Revisa tus credenciales.');
   }
 
+  async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase) return;
+    setMessage('');
+    setSendingLink(true);
+    const form = new FormData(event.currentTarget);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: String(form.get('email')),
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
+    setSendingLink(false);
+    setMessage(
+      error
+        ? 'No fue posible enviar el enlace. Verifica el correo e inténtalo de nuevo.'
+        : 'Revisa tu correo: enviamos un enlace seguro para entrar.',
+    );
+  }
+
   async function createBrand(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session) return;
@@ -128,25 +149,39 @@ export default function AdminHome() {
   if (!session) {
     return (
       <main className="login-shell" id="contenido-principal">
-        <form className="login-card" onSubmit={signIn}>
+        <div className="login-card">
           <p>IICA Admin</p>
           <h1>Datos verificables, acceso controlado.</h1>
-          <label>
-            Correo
-            <input type="email" name="email" autoComplete="email" required />
-          </label>
-          <label>
-            Contraseña
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <form className="login-method" onSubmit={sendMagicLink}>
+            <label>
+              Correo administrativo
+              <input type="email" name="email" autoComplete="email" required />
+            </label>
+            <button type="submit" disabled={sendingLink}>
+              {sendingLink ? 'Enviando…' : 'Recibir enlace de acceso'}
+            </button>
+          </form>
+          <details>
+            <summary>Entrar con contraseña</summary>
+            <form className="login-method" onSubmit={signIn}>
+              <label>
+                Correo
+                <input type="email" name="email" autoComplete="email" required />
+              </label>
+              <label>
+                Contraseña
+                <input
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <button type="submit">Iniciar sesión</button>
+            </form>
+          </details>
           {message ? <div className="admin-message">{message}</div> : null}
-          <button type="submit">Iniciar sesión</button>
-        </form>
+        </div>
       </main>
     );
   }

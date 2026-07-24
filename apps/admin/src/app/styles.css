@@ -82,6 +82,27 @@ body {
   font-size: 13px;
   font-weight: 700;
 }
+.login-method {
+  display: grid;
+  gap: 16px;
+}
+.login-card details {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.login-card summary {
+  padding-top: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.login-card details[open] summary {
+  margin-bottom: 18px;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .login-card input,
 .admin-form input {
   width: 100%;
