@@ -117,6 +117,19 @@ class CreateTaxRuleRequest(BaseModel):
     source_url: AnyHttpUrl
 
 
+class CreateIncentiveRequest(BaseModel):
+    country_code: str = Field(default="CO", min_length=2, max_length=2)
+    city_code: str | None = None
+    name: str = Field(min_length=1, max_length=160)
+    incentive_kind: str = Field(min_length=1, max_length=64)
+    powertrain: str | None = None
+    amount: Decimal = Field(ge=0)
+    currency_code: str = Field(default="COP", min_length=3, max_length=3)
+    effective_from: date
+    effective_to: date | None = None
+    source_url: AnyHttpUrl
+
+
 class AdminRecordResponse(BaseModel):
     id: UUID
     status: str = "created"
@@ -131,8 +144,24 @@ class TaxRuleResponse(BaseModel):
     city_id: UUID | None
     tax_kind: str
     rate_percentage: Decimal
-    effective_from: str
-    effective_to: str | None
+    effective_from: date
+    effective_to: date | None
+    source_url: str
+
+
+class IncentiveResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    country_code: str
+    city_id: UUID | None
+    incentive_kind: str
+    powertrain: str | None
+    amount: Decimal
+    currency_code: str
+    effective_from: date
+    effective_to: date | None
     source_url: str
 
 

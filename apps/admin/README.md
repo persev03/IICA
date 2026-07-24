@@ -1,5 +1,5 @@
 # Panel administrativo
 
-Esta aplicación se implementará en la Fase 7. Permitirá gestionar catálogos,
-reglas territoriales, incentivos, impuestos, infraestructura y usuarios sin
-cambiar código.
+Portal protegido con Supabase Auth para gestionar marcas, ciudades, vehículos,
+movilidad, infraestructura, impuestos e incentivos sin cambiar código. Todas las
+reglas temporales exigen vigencia y fuente trazable.

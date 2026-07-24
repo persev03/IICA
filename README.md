@@ -17,7 +17,7 @@ vigentes y trazables.
 ```
 apps/       Aplicaciones desplegables (web, api, admin)
 packages/   Código reutilizable (motor IICA, tipos compartidos, UI)
-database/   Migraciones y datos semilla (próxima fase)
+database/   Migraciones y datos semilla versionados
 docs/       Arquitectura y decisiones técnicas
 docker/     Configuración de desarrollo local
 ```

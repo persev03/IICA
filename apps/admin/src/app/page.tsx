@@ -13,7 +13,7 @@ const apiUrl =
 const sections = [
   ['Catálogo', 'Marcas, modelos y versiones', 'vehicle_brands'],
   ['Territorio', 'Países, departamentos y ciudades', 'countries'],
-  ['Reglas locales', 'Impuestos, incentivos y movilidad', 'tax_rules'],
+  ['Reglas locales', 'Impuestos, incentivos y movilidad', 'incentives'],
   ['Infraestructura', 'Carga, talleres y concesionarios', 'infrastructure_snapshots'],
 ];
 
@@ -31,6 +31,7 @@ export default function AdminHome() {
       vehicle_brands: '/v1/vehicle-brands',
       countries: '/v1/countries',
       tax_rules: '/v1/tax-rules',
+      incentives: '/v1/incentives',
       infrastructure_snapshots: null,
     };
     const entries = await Promise.all(

@@ -14,6 +14,7 @@ from infrastructure.persistence.models import (
     Base,
     City,
     Country,
+    Incentive,
     InfrastructureSnapshot,
     MobilityRestriction,
     VehicleBrand,
@@ -60,6 +61,21 @@ class CatalogIntegrationTests(TestCase):
 
         with session_factory() as session:
             session.add(Country(code="CO", name="Colombia", currency_code="COP"))
+            session.add(
+                Incentive(
+                    country_code="CO",
+                    city_id=None,
+                    name="Beneficio verificable",
+                    incentive_kind="purchase",
+                    powertrain="electric",
+                    amount=Decimal(1000000),
+                    currency_code="COP",
+                    conditions={},
+                    effective_from=date(2026, 1, 1),
+                    effective_to=None,
+                    source_url="https://example.com/incentive",
+                )
+            )
             session.commit()
 
         def override_session():
@@ -83,6 +99,16 @@ class CatalogIntegrationTests(TestCase):
             response.json(),
             [{"code": "CO", "name": "Colombia", "currency_code": "COP"}],
         )
+
+    def test_lists_versioned_incentives_for_a_country(self) -> None:
+        response = self.client.get("/v1/incentives?country_code=co")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["name"], "Beneficio verificable")
+        self.assertEqual(payload[0]["amount"], "1000000.00")
+        self.assertEqual(payload[0]["powertrain"], "electric")
 
 
 class EvaluationIntegrationTests(TestCase):

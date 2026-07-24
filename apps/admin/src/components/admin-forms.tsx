@@ -8,7 +8,14 @@ const apiUrl =
   process.env.NEXT_PUBLIC_IICA_API_URL ||
   (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : '');
 
-type FormKind = 'brand' | 'city' | 'vehicle' | 'mobility' | 'infrastructure' | 'tax';
+type FormKind =
+  | 'brand'
+  | 'city'
+  | 'vehicle'
+  | 'mobility'
+  | 'infrastructure'
+  | 'tax'
+  | 'incentive';
 
 const formLabels: Array<[FormKind, string]> = [
   ['brand', 'Marca'],
@@ -17,6 +24,7 @@ const formLabels: Array<[FormKind, string]> = [
   ['mobility', 'Movilidad'],
   ['infrastructure', 'Infraestructura'],
   ['tax', 'Impuesto'],
+  ['incentive', 'Incentivo'],
 ];
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? '').trim();
@@ -82,6 +90,20 @@ function payloadFor(kind: FormKind, form: FormData): object {
       source_url: value(form, 'source_url'),
     };
   }
+  if (kind === 'incentive') {
+    return {
+      country_code: value(form, 'country_code'),
+      city_code: optionalValue(form, 'city_code'),
+      name: value(form, 'name'),
+      incentive_kind: value(form, 'incentive_kind'),
+      powertrain: optionalValue(form, 'powertrain'),
+      amount: numberValue(form, 'amount'),
+      currency_code: value(form, 'currency_code'),
+      effective_from: value(form, 'effective_from'),
+      effective_to: optionalValue(form, 'effective_to'),
+      source_url: value(form, 'source_url'),
+    };
+  }
   return {
     country_code: value(form, 'country_code'),
     city_code: optionalValue(form, 'city_code'),
@@ -101,6 +123,7 @@ const endpoints: Record<FormKind, string> = {
   mobility: '/v1/admin/mobility-restrictions',
   infrastructure: '/v1/admin/infrastructure-snapshots',
   tax: '/v1/admin/tax-rules',
+  incentive: '/v1/admin/incentives',
 };
 
 export function AdminForms({
@@ -313,6 +336,34 @@ function AdminFields({ kind }: { kind: FormKind }) {
       </>
     );
   }
+  if (kind === 'incentive') {
+    return (
+      <>
+        <Field label="País" name="country_code" defaultValue="CO" maxLength={2} />
+        <Field label="Ciudad (opcional)" name="city_code" required={false} />
+        <Field label="Nombre del incentivo" name="name" />
+        <Field label="Tipo de incentivo" name="incentive_kind" />
+        <SelectField label="Motorización" name="powertrain" required={false}>
+          <option value="">Todas</option>
+          <option value="gasoline">Gasolina</option>
+          <option value="diesel">Diésel</option>
+          <option value="hybrid">Híbrido</option>
+          <option value="plug_in_hybrid">Híbrido enchufable</option>
+          <option value="electric">Eléctrico</option>
+        </SelectField>
+        <Field label="Valor" name="amount" type="number" min="0" step="0.01" />
+        <Field label="Moneda" name="currency_code" defaultValue="COP" maxLength={3} />
+        <Field label="Vigente desde" name="effective_from" type="date" />
+        <Field
+          label="Vigente hasta (opcional)"
+          name="effective_to"
+          type="date"
+          required={false}
+        />
+        <Field label="Fuente oficial" name="source_url" type="url" wide />
+      </>
+    );
+  }
   return (
     <>
       <Field label="País" name="country_code" defaultValue="CO" maxLength={2} />
@@ -361,15 +412,17 @@ function SelectField({
   label,
   name,
   children,
+  required = true,
 }: {
   label: string;
   name: string;
   children: ReactNode;
+  required?: boolean;
 }) {
   return (
     <label>
       {label}
-      <select name={name} required>
+      <select name={name} required={required}>
         {children}
       </select>
     </label>

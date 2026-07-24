@@ -10,6 +10,7 @@ from sqlalchemy import select
 from infrastructure.persistence.models import (
     City,
     Country,
+    Incentive,
     InfrastructureSnapshot,
     MobilityRestriction,
     TaxRule,
@@ -25,10 +26,12 @@ from presentation.http.schemas import (
     CountryResponse,
     CreateBrandRequest,
     CreateCityRequest,
+    CreateIncentiveRequest,
     CreateInfrastructureSnapshotRequest,
     CreateMobilityRestrictionRequest,
     CreateTaxRuleRequest,
     CreateVehicleRequest,
+    IncentiveResponse,
     TaxRuleResponse,
     VehicleDetailResponse,
     VehicleSummaryResponse,
@@ -53,6 +56,21 @@ def list_tax_rules(session: DatabaseSession, country_code: str = "CO") -> list[T
             select(TaxRule)
             .where(TaxRule.country_code == country_code.upper())
             .order_by(TaxRule.effective_from.desc())
+        )
+    )
+
+
+@router.get("/incentives", response_model=list[IncentiveResponse], tags=["rules"])
+def list_incentives(
+    session: DatabaseSession, country_code: str = "CO"
+) -> list[Incentive]:
+    """Expone incentivos vigentes y versionados para auditoría."""
+
+    return list(
+        session.scalars(
+            select(Incentive)
+            .where(Incentive.country_code == country_code.upper())
+            .order_by(Incentive.effective_from.desc())
         )
     )
 
@@ -373,6 +391,38 @@ def create_tax_rule(
         name=payload.name,
         tax_kind=payload.tax_kind,
         rate_percentage=payload.rate_percentage,
+        conditions={},
+        effective_from=payload.effective_from,
+        effective_to=payload.effective_to,
+        source_url=str(payload.source_url),
+    )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return AdminRecordResponse(id=record.id)
+
+
+@router.post(
+    "/admin/incentives",
+    response_model=AdminRecordResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin_api_key)],
+    tags=["admin"],
+)
+def create_incentive(
+    payload: CreateIncentiveRequest, session: DatabaseSession
+) -> AdminRecordResponse:
+    city = (
+        _city_by_code(session, payload.city_code) if payload.city_code else None
+    )
+    record = Incentive(
+        country_code=payload.country_code.upper(),
+        city_id=city.id if city else None,
+        name=payload.name,
+        incentive_kind=payload.incentive_kind,
+        powertrain=payload.powertrain,
+        amount=payload.amount,
+        currency_code=payload.currency_code.upper(),
         conditions={},
         effective_from=payload.effective_from,
         effective_to=payload.effective_to,
