@@ -6,7 +6,7 @@ const signals = [
 
 export default function Home() {
   return (
-    <main>
+    <main id="contenido-principal" tabIndex={-1}>
       <nav className="nav" aria-label="Navegación principal">
         <a className="brand" href="#inicio" aria-label="IICA inicio">
           <span className="brand-mark">I</span>IICA

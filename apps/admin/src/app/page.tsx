@@ -23,7 +23,7 @@ export default function AdminHome() {
         </nav>
         <small>Protegido por sesión administrativa</small>
       </aside>
-      <section>
+      <section id="contenido-principal" tabIndex={-1}>
         <header>
           <div>
             <p>Administración</p>
@@ -41,7 +41,9 @@ export default function AdminHome() {
               <p>{table}</p>
               <h2>{name}</h2>
               <span>{detail}</span>
-              <a href="#gestion">Gestionar →</a>
+              <a href="#gestion" aria-label={`Gestionar ${name}`}>
+                Gestionar →
+              </a>
             </article>
           ))}
         </div>
