@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const signals = [
   ['01', 'Tu realidad', 'Presupuesto, familia, uso, viajes y horizonte de propiedad.'],
   ['02', 'Tu ciudad', 'Impuestos, movilidad, incentivos e infraestructura local.'],
@@ -36,9 +38,9 @@ export default function Home() {
             única, objetiva y fácil de entender.
           </p>
           <div className="hero-actions" id="calcular">
-            <a className="button button-primary" href="/calculadora">
+            <Link className="button button-primary" href="/calculadora">
               Calcular mi IICA <span aria-hidden="true">↗</span>
-            </a>
+            </Link>
             <a className="button button-quiet" href="#metodo">
               Conocer la metodología <span aria-hidden="true">↓</span>
             </a>
