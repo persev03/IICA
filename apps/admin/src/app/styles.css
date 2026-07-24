@@ -35,6 +35,72 @@ body {
   color: var(--ink);
   font-family: Arial, sans-serif;
 }
+.admin-state,
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.admin-state {
+  align-content: center;
+  justify-items: start;
+  max-width: 760px;
+  margin: auto;
+}
+.admin-state p,
+.login-card > p {
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.admin-state span {
+  max-width: 620px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.login-card {
+  width: min(100%, 480px);
+  display: grid;
+  gap: 20px;
+  padding: 36px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+}
+.login-card h1 {
+  margin-bottom: 16px;
+  font-size: clamp(34px, 6vw, 52px);
+}
+.login-card label,
+.admin-form label {
+  display: grid;
+  gap: 8px;
+  color: #d8d6cd;
+  font-size: 13px;
+  font-weight: 700;
+}
+.login-card input,
+.admin-form input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #4a4c44;
+  border-radius: 8px;
+  background: #242520;
+  color: var(--ink);
+  font: inherit;
+}
+.admin-message {
+  margin-top: 20px;
+  padding: 13px 15px;
+  border: 1px solid #596044;
+  border-radius: 8px;
+  background: #25281b;
+  color: var(--lime);
+  font-size: 13px;
+}
 .admin {
   min-height: 100vh;
   display: grid;
@@ -73,9 +139,18 @@ body {
   color: var(--lime);
 }
 .admin aside small {
-  margin-top: auto;
+  margin-top: 10px;
   color: #74756e;
   font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.logout {
+  margin-top: auto;
+  padding: 0;
+  background: transparent;
+  color: #aaa9a1;
+  font-size: 12px;
+  text-align: left;
 }
 .admin > section {
   padding: 54px;
@@ -106,6 +181,22 @@ button {
   border-radius: 99px;
   padding: 13px 17px;
   font-weight: 700;
+  cursor: pointer;
+}
+.admin-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 16px;
+  margin-top: 30px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.admin-form h2 {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 .notice {
   margin: 48px 0 24px;
@@ -138,7 +229,7 @@ button {
   color: var(--muted);
   font-size: 14px;
 }
-.cards a {
+.cards strong {
   color: var(--lime);
   font-size: 13px;
   margin-top: auto;
@@ -185,6 +276,9 @@ button {
     display: grid;
   }
   .cards {
+    grid-template-columns: 1fr;
+  }
+  .admin-form {
     grid-template-columns: 1fr;
   }
 }

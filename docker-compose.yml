@@ -23,6 +23,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://iica:iica@postgres:5432/iica
       IICA_ADMIN_API_KEY: local-development-only
+      IICA_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
     depends_on:
       postgres: { condition: service_healthy }
     command: sh -c "alembic -c database/alembic.ini upgrade head && uvicorn presentation.http.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -32,12 +33,16 @@ services:
   web:
     build: { context: ., dockerfile: docker/web.Dockerfile }
     depends_on: [api]
+    environment:
+      NEXT_PUBLIC_IICA_API_URL: http://localhost:8000
     ports: ['3000:3000']
     volumes: [.:/workspace, web-node-modules:/workspace/node_modules]
 
   admin:
     build: { context: ., dockerfile: docker/admin.Dockerfile }
     depends_on: [api]
+    environment:
+      NEXT_PUBLIC_IICA_API_URL: http://localhost:8000
     ports: ['3001:3001']
     volumes: [.:/workspace, admin-node-modules:/workspace/node_modules]
 

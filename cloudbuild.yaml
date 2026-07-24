@@ -1,0 +1,41 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --file
+      - docker/api.Dockerfile
+      - --tag
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/iica-api:$COMMIT_SHA
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/iica-api:$COMMIT_SHA
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - iica-api
+      - --image
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/iica-api:$COMMIT_SHA
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-secrets
+      - DATABASE_URL=iica-database-url:latest
+      - --set-env-vars
+      - IICA_ALLOWED_ORIGINS=${_WEB_ORIGIN};${_ADMIN_ORIGIN},SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ADMIN_EMAILS=${_ADMIN_EMAILS}
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/iica-api:$COMMIT_SHA
+substitutions:
+  _REGION: us-east1
+  _REPOSITORY: iica
+  _WEB_ORIGIN: https://example.pages.dev
+  _ADMIN_ORIGIN: https://example-admin.pages.dev
+  _SUPABASE_URL: https://example.supabase.co
+  _ADMIN_EMAILS: admin@example.com
+options:
+  logging: CLOUD_LOGGING_ONLY

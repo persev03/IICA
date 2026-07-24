@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import sys
 from logging.config import fileConfig
 from os import getenv
 from pathlib import Path
-import sys
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -13,7 +13,7 @@ from sqlalchemy import engine_from_config, pool
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps" / "api" / "src"))
 
-from infrastructure.persistence.models import Base  # noqa: E402
+from infrastructure.persistence.models import Base
 
 config = context.config
 if config.config_file_name is not None:

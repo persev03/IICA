@@ -205,3 +205,22 @@ class InfrastructureSnapshot(Timestamped, Base):
     authorized_workshops: Mapped[int] = mapped_column(nullable=False)
     dealerships: Mapped[int] = mapped_column(nullable=False)
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class EvaluationRecord(Base):
+    """Instantánea inmutable de un cálculo asociado a una persona autenticada."""
+
+    __tablename__ = "evaluations"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    city_id: Mapped[UUID] = mapped_column(
+        ForeignKey("cities.id", ondelete="RESTRICT"), nullable=False
+    )
+    evaluated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    input_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    result_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    engine_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    data_version: Mapped[str] = mapped_column(Text, nullable=False)

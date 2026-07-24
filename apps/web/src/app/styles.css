@@ -116,6 +116,39 @@
   border: 0;
   cursor: pointer;
 }
+.profile-form button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.form-error {
+  margin: 0;
+  padding: 13px 15px;
+  border: 1px solid #8f564f;
+  border-radius: 8px;
+  background: #2b1d1a;
+  color: #ffd6cf;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.account-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #41433a;
+  border-radius: 10px;
+  background: #20211d;
+  color: var(--muted);
+  font-size: 12px;
+}
+.account-panel .text-button {
+  color: var(--lime);
+  font-size: 12px;
+}
 .form-notice {
   background: #25281b;
   color: #d9ff65;
@@ -157,9 +190,80 @@
   justify-self: start;
   padding: 0;
 }
-.result-pending {
-  align-content: center;
-  min-height: 420px;
+.results {
+  padding: 28px;
+}
+.result-list {
+  display: grid;
+  gap: 16px;
+}
+.result-card {
+  position: relative;
+  padding: 24px;
+  border: 1px solid #46483f;
+  border-radius: 14px;
+  background: #1d1e1a;
+}
+.result-card > p:first-of-type {
+  max-width: 80%;
+  margin: 0;
+  color: #d6d3cb;
+  font-weight: 700;
+}
+.result-winner {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: var(--lime);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.result-score {
+  display: flex;
+  align-items: baseline;
+  margin-top: 18px;
+}
+.result-score strong {
+  color: var(--lime);
+  font-size: 64px;
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+}
+.result-score span {
+  color: var(--muted);
+  font-size: 16px;
+}
+.result-card h3 {
+  margin: 8px 0 24px;
+  font-size: 22px;
+}
+.result-card h4 {
+  margin: 18px 0 8px;
+  color: #d6d3cb;
+  font-size: 13px;
+}
+.result-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.result-recommendation {
+  padding: 12px;
+  border-radius: 8px;
+  background: #25281b;
+  color: var(--lime);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.result-card > small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #77786f;
+  font-size: 10px;
 }
 @media (max-width: 760px) {
   .calculator-shell {
@@ -172,6 +276,9 @@
   }
   .profile-form {
     padding: 22px;
+  }
+  .field-grid {
+    grid-template-columns: 1fr;
   }
 }
 * {

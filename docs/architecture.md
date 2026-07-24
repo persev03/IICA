@@ -7,7 +7,7 @@ desplegables y paquetes de negocio reutilizables.
 
 ```text
 apps/web ──────┐
-apps/admin ────┼──> apps/api ───> PostgreSQL / Redis
+apps/admin ────┼──> apps/api ───> Supabase PostgreSQL
                │        │
                └──> packages/iica-engine
                          │
@@ -33,10 +33,11 @@ proveedor de datos o añadir una app móvil no modifica el cálculo del IICA.
 ## API pública y administración
 
 La API publica OpenAPI automáticamente en `/openapi.json` y documentación
-interactiva en `/docs`. Las consultas de catálogo son públicas. Las mutaciones
-administrativas requieren `X-Admin-API-Key`, cargada únicamente desde entorno;
-este límite temporal será sustituido por roles y sesiones de Auth.js cuando se
-incorpore la identidad de usuarios en los flujos web.
+interactiva en `/docs`. Las consultas de catálogo son públicas. Supabase
+autentica a las personas y la API valida cada JWT contra el JWKS del proyecto.
+Las mutaciones requieren el rol `admin` o un correo incluido en
+`SUPABASE_ADMIN_EMAILS`. `X-Admin-API-Key` solo se conserva para desarrollo
+local.
 
 ## Datos regulados por administración
 
@@ -53,3 +54,5 @@ literal en el motor.
   para trazabilidad y calibración.
 - Cada cálculo guardará versión del motor y versión de los datos usados para
   que sea reproducible.
+- Los cálculos autenticados guardan una instantánea; los anónimos no se
+  persisten.
