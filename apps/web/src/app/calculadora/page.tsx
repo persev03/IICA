@@ -88,6 +88,8 @@ export default function CalculatorPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loginEmail, setLoginEmail] = useState('');
   const [authMessage, setAuthMessage] = useState('');
+  const [history, setHistory] = useState<Evaluation[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -99,6 +101,34 @@ export default function CalculatorPage() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session || !apiUrl) {
+      setHistory([]);
+      return;
+    }
+    let active = true;
+    setHistoryLoading(true);
+    void fetch(`${apiUrl}/v1/me/evaluations`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('No fue posible consultar el historial.');
+        return response.json() as Promise<Evaluation[]>;
+      })
+      .then((records) => {
+        if (active) setHistory(records);
+      })
+      .catch(() => {
+        if (active) setAuthMessage('No pudimos cargar tu historial.');
+      })
+      .finally(() => {
+        if (active) setHistoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   useEffect(() => {
     async function loadCatalog() {
@@ -199,6 +229,9 @@ export default function CalculatorPage() {
         );
       }
       setEvaluation(payload as Evaluation);
+      if (session) {
+        setHistory((current) => [payload as Evaluation, ...current].slice(0, 20));
+      }
       setStep(3);
     } catch (error) {
       setEvaluationError(
@@ -267,6 +300,32 @@ export default function CalculatorPage() {
                   {session ? (
                     <>
                       <span>Resultado asociado a {session.user.email}</span>
+                      <div className="history-panel">
+                        <strong>Comparaciones guardadas</strong>
+                        {historyLoading ? <small>Cargando historial…</small> : null}
+                        {!historyLoading && !history.length ? (
+                          <small>Aún no tienes cálculos guardados.</small>
+                        ) : null}
+                        {history.slice(0, 5).map((record, index) => (
+                          <button
+                            className="history-item"
+                            type="button"
+                            key={`${record.evaluated_at}-${index}`}
+                            onClick={() => {
+                              setEvaluation(record);
+                              setStep(3);
+                            }}
+                          >
+                            <span>
+                              {record.city} · {record.evaluated_at}
+                            </span>
+                            <small>
+                              {record.results[0]?.name} ·{' '}
+                              {Math.round(Number(record.results[0]?.score ?? 0))}/100
+                            </small>
+                          </button>
+                        ))}
+                      </div>
                       <button
                         className="text-button"
                         type="button"

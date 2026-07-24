@@ -22,6 +22,7 @@ from infrastructure.persistence.models import (
     VehicleVersion,
 )
 from infrastructure.persistence.session import get_session
+from presentation.http.dependencies import optional_user_id
 from presentation.http.main import app
 
 
@@ -214,3 +215,27 @@ class EvaluationIntegrationTests(TestCase):
         self.assertEqual(payload["results"][0]["score"], "74.35")
         self.assertEqual(payload["results"][0]["classification"], "Buena compra")
         self.assertTrue(payload["results"][0]["influences"])
+
+    def test_authenticated_user_can_reopen_saved_evaluations(self) -> None:
+        app.dependency_overrides[optional_user_id] = lambda: "user-verified"
+        evaluation = self.client.post(
+            "/v1/evaluations",
+            json={
+                "city_code": "bogota",
+                "budget": "100000000",
+                "annual_kilometers": 12000,
+                "ownership_years": 5,
+                "primary_use": "mixed",
+                "household_size": 3,
+                "frequent_road_trips": False,
+                "charging_access": "none",
+                "vehicle_ids": [self.vehicle_id],
+            },
+        )
+
+        history = self.client.get("/v1/me/evaluations")
+
+        self.assertEqual(evaluation.status_code, 200)
+        self.assertEqual(history.status_code, 200)
+        self.assertEqual(len(history.json()), 1)
+        self.assertEqual(history.json()[0], evaluation.json())

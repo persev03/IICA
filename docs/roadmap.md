@@ -11,6 +11,7 @@
 | 7    | Panel administrativo de datos y reglas locales     | Completada  |
 | 8    | Pruebas de integración, accesibilidad y CI         | Completada  |
 | 9    | Contenedores y configuración de despliegue         | Completada  |
+| 10   | Historial autenticado y reapertura de resultados   | Completada  |
 
 Cada fase finaliza con pruebas pertinentes, actualización documental y un
 commit Conventional Commit independiente.

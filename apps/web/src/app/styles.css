@@ -149,6 +149,39 @@
   color: var(--lime);
   font-size: 12px;
 }
+.history-panel {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0;
+  padding-top: 12px;
+  border-top: 1px solid #41433a;
+}
+.history-panel > strong {
+  color: #e3e0d8;
+  font-size: 12px;
+}
+.history-item {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #41433a;
+  border-radius: 7px;
+  background: #292a25;
+  color: #e3e0d8;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.history-item:hover {
+  border-color: var(--lime);
+}
+.history-item small {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .form-notice {
   background: #25281b;
   color: #d9ff65;
