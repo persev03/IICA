@@ -202,24 +202,27 @@ class MarketProfile:
     """Señales de mercado asociadas a un vehículo, con fecha de corte."""
 
     as_of: str
-    expected_annual_depreciation_percentage: Decimal
-    liquidity_score: Score
-    owner_satisfaction_score: Score
+    expected_annual_depreciation_percentage: Decimal | None = None
+    liquidity_score: Score | None = None
+    owner_satisfaction_score: Score | None = None
 
     def __post_init__(self) -> None:
-        try:
-            depreciation = Decimal(self.expected_annual_depreciation_percentage)
-        except (InvalidOperation, ValueError, TypeError) as error:
-            raise ValueError("La depreciación esperada debe ser válida.") from error
-        if not Decimal(0) <= depreciation <= Decimal(100):
-            raise ValueError("La depreciación anual debe estar entre 0 y 100.")
         if not self.as_of.strip():
             raise ValueError("as_of es obligatorio.")
-        object.__setattr__(
-            self,
-            "expected_annual_depreciation_percentage",
-            depreciation.quantize(Decimal("0.01")),
-        )
+        if self.expected_annual_depreciation_percentage is not None:
+            try:
+                depreciation = Decimal(
+                    self.expected_annual_depreciation_percentage
+                )
+            except (InvalidOperation, ValueError, TypeError) as error:
+                raise ValueError("La depreciación esperada debe ser válida.") from error
+            if not Decimal(0) <= depreciation <= Decimal(100):
+                raise ValueError("La depreciación anual debe estar entre 0 y 100.")
+            object.__setattr__(
+                self,
+                "expected_annual_depreciation_percentage",
+                depreciation.quantize(Decimal("0.01")),
+            )
 
 
 @dataclass(frozen=True)

@@ -19,7 +19,7 @@ from .models import (
 class DeterministicIicaEngine:
     """Calcula una primera versión calibrable del IICA sin dependencias externas."""
 
-    VERSION = "0.6.0"
+    VERSION = "0.7.0"
 
     def evaluate(self, evaluation_input: EvaluationInput) -> EvaluationResult:
         """Entrega una sola puntuación y sus razones más relevantes."""
@@ -36,10 +36,6 @@ class DeterministicIicaEngine:
         mobility_fit = self._mobility_fit(evaluation_input)
         infrastructure_fit = self._infrastructure_fit(evaluation_input)
         use_fit = self._use_fit(evaluation_input)
-        depreciation_fit = max(
-            Decimal(0),
-            Decimal(100) - market.expected_annual_depreciation_percentage * 4,
-        )
         warranty_fit = min(Decimal(100), Decimal(vehicle.warranty_months) * 2)
 
         components = [
@@ -62,24 +58,6 @@ class DeterministicIicaEngine:
                 "Las reglas de movilidad de tu ciudad afectan el uso diario.",
             ),
             (
-                "mercado",
-                market.liquidity_score.value,
-                Decimal(10),
-                "La liquidez prevista influye en una futura reventa.",
-            ),
-            (
-                "depreciacion",
-                depreciation_fit,
-                Decimal(10),
-                "La depreciación esperada afecta el costo total de propiedad.",
-            ),
-            (
-                "satisfaccion",
-                market.owner_satisfaction_score.value,
-                Decimal(10),
-                "La experiencia de propietarios aporta evidencia práctica.",
-            ),
-            (
                 "uso",
                 use_fit,
                 Decimal("7.5"),
@@ -98,10 +76,44 @@ class DeterministicIicaEngine:
                 "La cobertura reduce incertidumbre en los primeros años.",
             ),
         ]
-        total = sum(
+        if market.liquidity_score is not None:
+            components.append(
+                (
+                    "mercado",
+                    market.liquidity_score.value,
+                    Decimal(10),
+                    "La liquidez observada influye en una futura reventa.",
+                )
+            )
+        if market.expected_annual_depreciation_percentage is not None:
+            depreciation_fit = max(
+                Decimal(0),
+                Decimal(100)
+                - market.expected_annual_depreciation_percentage * 4,
+            )
+            components.append(
+                (
+                    "depreciacion",
+                    depreciation_fit,
+                    Decimal(10),
+                    "La depreciación observada afecta el costo total de propiedad.",
+                )
+            )
+        if market.owner_satisfaction_score is not None:
+            components.append(
+                (
+                    "satisfaccion",
+                    market.owner_satisfaction_score.value,
+                    Decimal(10),
+                    "La experiencia documentada de propietarios aporta evidencia práctica.",
+                )
+            )
+        available_weight = sum((weight for _, _, weight, _ in components), Decimal(0))
+        weighted_sum = sum(
             (value * weight / 100 for _, value, weight, _ in components),
             Decimal(0),
         )
+        total = weighted_sum * Decimal(100) / available_weight
         influences = [
             Influence(
                 key=key,

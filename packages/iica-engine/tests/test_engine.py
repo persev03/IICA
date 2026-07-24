@@ -62,6 +62,55 @@ class DeterministicEngineTests(TestCase):
         result = DeterministicIicaEngine().evaluate(evaluation_input)
 
         self.assertEqual(result.score.value, Decimal("80.25"))
-        self.assertEqual(result.engine_version, "0.6.0")
+        self.assertEqual(result.engine_version, "0.7.0")
         self.assertEqual(result.data_version, "rules-1:2026-01-01")
         self.assertEqual(len(result.explanation.influences), 3)
+
+    def test_renormalizes_weights_when_market_signals_are_unavailable(self) -> None:
+        evaluation_input = EvaluationInput(
+            buyer=BuyerProfile(
+                "CO",
+                "bogota",
+                Money(Decimal(100000000), "COP"),
+                12000,
+                5,
+                VehicleUse.MIXED,
+                3,
+                False,
+                ChargingAccess.NONE,
+            ),
+            vehicle=VehicleProfile(
+                "v2",
+                "Verified",
+                "Vehicle",
+                "Base",
+                2026,
+                Money(Decimal(90000000), "COP"),
+                Powertrain.GASOLINE,
+                5,
+                Score(Decimal(80)),
+                36,
+            ),
+            environment=EnvironmentProfile(
+                "CO",
+                "bogota",
+                "rules-2",
+                "2026-07-24",
+                Money(Decimal(0), "COP"),
+                Money(Decimal(0), "COP"),
+                10,
+                False,
+                0,
+            ),
+            market=MarketProfile("2026-07-24"),
+            engine_version="0.7.0",
+        )
+
+        result = DeterministicIicaEngine().evaluate(evaluation_input)
+
+        self.assertGreaterEqual(result.score.value, Decimal(0))
+        self.assertLessEqual(result.score.value, Decimal(100))
+        self.assertNotIn(
+            "La liquidez observada influye en una futura reventa.",
+            result.explanation.strengths,
+        )

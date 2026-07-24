@@ -21,6 +21,8 @@ const formLabels: Array<[FormKind, string]> = [
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? '').trim();
 const numberValue = (form: FormData, key: string) => Number(value(form, key));
+const optionalNumberValue = (form: FormData, key: string) =>
+  value(form, key) ? Number(value(form, key)) : null;
 const optionalValue = (form: FormData, key: string) => value(form, key) || null;
 
 function payloadFor(kind: FormKind, form: FormData): object {
@@ -49,12 +51,12 @@ function payloadFor(kind: FormKind, form: FormData): object {
       list_price: numberValue(form, 'list_price'),
       currency_code: value(form, 'currency_code'),
       market_as_of: value(form, 'market_as_of'),
-      expected_annual_depreciation_percentage: numberValue(
+      expected_annual_depreciation_percentage: optionalNumberValue(
         form,
         'expected_annual_depreciation_percentage',
       ),
-      liquidity_score: numberValue(form, 'liquidity_score'),
-      owner_satisfaction_score: numberValue(form, 'owner_satisfaction_score'),
+      liquidity_score: optionalNumberValue(form, 'liquidity_score'),
+      owner_satisfaction_score: optionalNumberValue(form, 'owner_satisfaction_score'),
       source_url: value(form, 'source_url'),
     };
   }
@@ -232,28 +234,31 @@ function AdminFields({ kind }: { kind: FormKind }) {
         <Field label="Moneda" name="currency_code" defaultValue="COP" maxLength={3} />
         <Field label="Fecha del mercado" name="market_as_of" type="date" />
         <Field
-          label="Depreciación anual %"
+          label="Depreciación anual % (opcional)"
           name="expected_annual_depreciation_percentage"
           type="number"
           min="0"
           max="100"
           step="0.01"
+          required={false}
         />
         <Field
-          label="Liquidez (0–100)"
+          label="Liquidez (0–100, opcional)"
           name="liquidity_score"
           type="number"
           min="0"
           max="100"
           step="0.01"
+          required={false}
         />
         <Field
-          label="Satisfacción (0–100)"
+          label="Satisfacción (0–100, opcional)"
           name="owner_satisfaction_score"
           type="number"
           min="0"
           max="100"
           step="0.01"
+          required={false}
         />
         <Field label="Fuente oficial" name="source_url" type="url" wide />
       </>

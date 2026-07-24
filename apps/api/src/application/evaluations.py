@@ -252,12 +252,7 @@ def _evaluate_one(
 def _market_profile(
     version: VehicleVersion, brand_name: str, model_name: str
 ) -> MarketProfile:
-    required = {
-        "market_as_of",
-        "expected_annual_depreciation_percentage",
-        "liquidity_score",
-        "owner_satisfaction_score",
-    }
+    required = {"market_as_of"}
     missing = sorted(required.difference(version.attributes))
     if missing:
         raise EvaluationDataError(
@@ -267,12 +262,28 @@ def _market_profile(
     try:
         return MarketProfile(
             as_of=str(version.attributes["market_as_of"]),
-            expected_annual_depreciation_percentage=Decimal(
-                str(version.attributes["expected_annual_depreciation_percentage"])
+            expected_annual_depreciation_percentage=(
+                Decimal(
+                    str(
+                        version.attributes[
+                            "expected_annual_depreciation_percentage"
+                        ]
+                    )
+                )
+                if "expected_annual_depreciation_percentage" in version.attributes
+                else None
             ),
-            liquidity_score=Score(Decimal(str(version.attributes["liquidity_score"]))),
-            owner_satisfaction_score=Score(
-                Decimal(str(version.attributes["owner_satisfaction_score"]))
+            liquidity_score=(
+                Score(Decimal(str(version.attributes["liquidity_score"])))
+                if "liquidity_score" in version.attributes
+                else None
+            ),
+            owner_satisfaction_score=(
+                Score(
+                    Decimal(str(version.attributes["owner_satisfaction_score"]))
+                )
+                if "owner_satisfaction_score" in version.attributes
+                else None
             ),
         )
     except (InvalidOperation, ValueError) as error:

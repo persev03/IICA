@@ -78,9 +78,11 @@ class CreateVehicleRequest(BaseModel):
     list_price: Decimal = Field(gt=0)
     currency_code: str = Field(default="COP", min_length=3, max_length=3)
     market_as_of: date
-    expected_annual_depreciation_percentage: Decimal = Field(ge=0, le=100)
-    liquidity_score: Decimal = Field(ge=0, le=100)
-    owner_satisfaction_score: Decimal = Field(ge=0, le=100)
+    expected_annual_depreciation_percentage: Decimal | None = Field(
+        default=None, ge=0, le=100
+    )
+    liquidity_score: Decimal | None = Field(default=None, ge=0, le=100)
+    owner_satisfaction_score: Decimal | None = Field(default=None, ge=0, le=100)
     source_url: AnyHttpUrl
 
 

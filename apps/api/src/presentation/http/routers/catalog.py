@@ -260,12 +260,26 @@ def create_vehicle(
         currency_code=payload.currency_code.upper(),
         attributes={
             "market_as_of": payload.market_as_of.isoformat(),
-            "expected_annual_depreciation_percentage": str(
-                payload.expected_annual_depreciation_percentage
-            ),
-            "liquidity_score": str(payload.liquidity_score),
-            "owner_satisfaction_score": str(payload.owner_satisfaction_score),
             "source_url": str(payload.source_url),
+            **(
+                {
+                    "expected_annual_depreciation_percentage": str(
+                        payload.expected_annual_depreciation_percentage
+                    )
+                }
+                if payload.expected_annual_depreciation_percentage is not None
+                else {}
+            ),
+            **(
+                {"liquidity_score": str(payload.liquidity_score)}
+                if payload.liquidity_score is not None
+                else {}
+            ),
+            **(
+                {"owner_satisfaction_score": str(payload.owner_satisfaction_score)}
+                if payload.owner_satisfaction_score is not None
+                else {}
+            ),
         },
     )
     session.add(version)
