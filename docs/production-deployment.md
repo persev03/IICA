@@ -1,5 +1,19 @@
 # Despliegue de producción
 
+## Opción gratuita para la API: Render
+
+El repositorio incluye `render.yaml` para crear `iica-api` como servicio web
+gratuito. Al importar el Blueprint, Render solicita:
+
+- `DATABASE_URL`: conexión Session pooler de Supabase, cambiando el esquema a
+  `postgresql+psycopg://`.
+- `SUPABASE_ADMIN_EMAILS`: correos separados por comas autorizados para
+  administrar los catálogos.
+
+La URL resultante `https://iica-api.onrender.com` debe guardarse como variable
+`IICA_API_URL` del repositorio en GitHub. Las instancias gratuitas pueden
+suspenderse por inactividad y tardar en responder en el primer acceso.
+
 La arquitectura objetivo usa tres servicios:
 
 - **Cloudflare Pages** publica `apps/web/out` y `apps/admin/out`.

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: iica-api
+    runtime: docker
+    plan: free
+    region: oregon
+    repo: https://github.com/persev03/IICA
+    branch: main
+    dockerfilePath: ./docker/api.Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: IICA_ALLOWED_ORIGINS
+        value: https://persev03.github.io
+      - key: SUPABASE_URL
+        value: https://wvadbakdrbhbtihhkpjl.supabase.co
+      - key: SUPABASE_ADMIN_EMAILS
+        sync: false
+      - key: IICA_ADMIN_API_KEY
+        generateValue: true
