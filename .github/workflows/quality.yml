@@ -26,6 +26,22 @@ jobs:
   api:
     name: API quality
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: iica
+          POSTGRES_PASSWORD: iica
+          POSTGRES_DB: iica
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U iica -d iica"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://iica:iica@127.0.0.1:5432/iica
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,3 +52,4 @@ jobs:
       - run: mypy apps/api/src
       - run: pytest apps/api
       - run: alembic -c database/alembic.ini upgrade head --sql > /dev/null
+      - run: alembic -c database/alembic.ini upgrade head
