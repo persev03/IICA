@@ -5,6 +5,7 @@ Revises: 0006_seed_bogota_hybrid_tax_2026
 Create Date: 2026-07-25
 """
 
+from datetime import date
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -196,8 +197,8 @@ def _insert_city_context() -> None:
         restriction_id = UUID(int=UUID(city_id).int ^ 0x11111111111111111111111111111111)
         infrastructure_id = UUID(int=UUID(city_id).int ^ 0x22222222222222222222222222222222)
         periods = (
-            ("2026-02-02", "2026-07-31", MOBILITY_SOURCE, 0),
-            ("2026-08-01", "2026-12-31", MOBILITY_SOURCE_SECOND_HALF, 1),
+            (date(2026, 2, 2), date(2026, 7, 31), MOBILITY_SOURCE, 0),
+            (date(2026, 8, 1), date(2026, 12, 31), MOBILITY_SOURCE_SECOND_HALF, 1),
         )
         powertrains = (("hybrid", "híbridos", 0), ("plug_in_hybrid", "PHEV", 1))
         for effective_from, effective_to, source, period_index in periods:
