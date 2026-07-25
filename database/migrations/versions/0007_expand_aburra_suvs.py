@@ -1,6 +1,6 @@
 """Amplía IICA al Valle de Aburrá y a cuatro SUV híbridas verificadas.
 
-Revision ID: 0007_expand_aburra_hybrid_suv_catalog
+Revision ID: 0007_expand_aburra_suvs
 Revises: 0006_seed_bogota_hybrid_tax_2026
 Create Date: 2026-07-25
 """
@@ -10,7 +10,7 @@ from uuid import UUID
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0007_expand_aburra_hybrid_suv_catalog"
+revision = "0007_expand_aburra_suvs"
 down_revision = "0006_seed_bogota_hybrid_tax_2026"
 branch_labels = None
 depends_on = None
