@@ -114,7 +114,7 @@ class VehicleVersion(Timestamped, Base):
     model_year: Mapped[int] = mapped_column(nullable=False)
     powertrain: Mapped[str] = mapped_column(String(32), nullable=False)
     seats: Mapped[int] = mapped_column(nullable=False)
-    safety_score: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
+    safety_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
     warranty_months: Mapped[int] = mapped_column(nullable=False)
     list_price: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False)

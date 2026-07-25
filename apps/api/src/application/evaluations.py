@@ -203,7 +203,9 @@ def _evaluate_one(
         purchase_price=Money(version.list_price, version.currency_code),
         powertrain=powertrain,
         seats=version.seats,
-        safety_score=Score(version.safety_score),
+        safety_score=(
+            Score(version.safety_score) if version.safety_score is not None else None
+        ),
         warranty_months=version.warranty_months,
     )
     environment = EnvironmentProfile(

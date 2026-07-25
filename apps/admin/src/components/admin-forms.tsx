@@ -54,7 +54,7 @@ function payloadFor(kind: FormKind, form: FormData): object {
       model_year: numberValue(form, 'model_year'),
       powertrain: value(form, 'powertrain'),
       seats: numberValue(form, 'seats'),
-      safety_score: numberValue(form, 'safety_score'),
+      safety_score: optionalNumberValue(form, 'safety_score'),
       warranty_months: numberValue(form, 'warranty_months'),
       list_price: numberValue(form, 'list_price'),
       currency_code: value(form, 'currency_code'),
@@ -237,12 +237,13 @@ function AdminFields({ kind }: { kind: FormKind }) {
         </SelectField>
         <Field label="Asientos" name="seats" type="number" min="1" max="100" />
         <Field
-          label="Seguridad (0–100)"
+          label="Seguridad NCAP (0–100, opcional)"
           name="safety_score"
           type="number"
           min="0"
           max="100"
           step="0.01"
+          required={false}
         />
         <Field
           label="Garantía (meses)"

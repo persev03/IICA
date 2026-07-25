@@ -148,7 +148,7 @@ class VehicleProfile:
     purchase_price: Money
     powertrain: Powertrain
     seats: int
-    safety_score: Score
+    safety_score: Score | None
     warranty_months: int
 
     def __post_init__(self) -> None:

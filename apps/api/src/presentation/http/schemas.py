@@ -35,7 +35,7 @@ class VehicleSummaryResponse(BaseModel):
     powertrain: str
     list_price: Decimal
     currency_code: str
-    safety_score: Decimal
+    safety_score: Decimal | None
 
 
 class VehicleDetailResponse(VehicleSummaryResponse):
@@ -73,7 +73,7 @@ class CreateVehicleRequest(BaseModel):
     model_year: int = Field(ge=1886, le=2100)
     powertrain: str
     seats: int = Field(ge=1, le=100)
-    safety_score: Decimal = Field(ge=0, le=100)
+    safety_score: Decimal | None = Field(default=None, ge=0, le=100)
     warranty_months: int = Field(ge=0, le=240)
     list_price: Decimal = Field(gt=0)
     currency_code: str = Field(default="COP", min_length=3, max_length=3)

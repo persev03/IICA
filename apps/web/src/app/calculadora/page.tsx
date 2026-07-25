@@ -26,7 +26,7 @@ type Vehicle = {
   powertrain: string;
   list_price: string;
   currency_code: string;
-  safety_score: string;
+  safety_score: string | null;
 };
 
 type BuyerProfile = {
@@ -453,8 +453,9 @@ export default function CalculatorPage() {
               <p className="form-kicker">Paso 2 de 3</p>
               <h2>¿Qué versiones quieres comparar?</h2>
               <p className="form-copy">
-                Solo aparecen versiones con precio, seguridad y señales de mercado
-                verificadas.
+                Solo aparecen versiones con precio vigente y evidencia verificable.
+                Si una versión no tiene una prueba NCAP equivalente, IICA omite ese
+                componente y reajusta el cálculo.
               </p>
               {evaluationError ? (
                 <p className="form-error" role="alert">

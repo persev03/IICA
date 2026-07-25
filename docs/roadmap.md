@@ -13,6 +13,7 @@
 | 9    | Contenedores y configuración de despliegue         | Completada  |
 | 10   | Historial autenticado y reapertura de resultados   | Completada  |
 | 11   | Costo efectivo con impuestos e incentivos          | Completada  |
+| 12   | Valle de Aburrá y catálogo SUV híbrido ampliado    | Completada  |
 
 Cada fase finaliza con pruebas pertinentes, actualización documental y un
 commit Conventional Commit independiente.

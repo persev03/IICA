@@ -63,7 +63,7 @@ class DeterministicEngineTests(TestCase):
         result = engine.evaluate(evaluation_input)
 
         self.assertEqual(result.score.value, Decimal("79.72"))
-        self.assertEqual(result.engine_version, "0.8.0")
+        self.assertEqual(result.engine_version, "0.9.0")
         self.assertEqual(result.data_version, "rules-1:2026-01-01")
         self.assertEqual(len(result.explanation.influences), 3)
 
@@ -82,7 +82,7 @@ class DeterministicEngineTests(TestCase):
                 100,
             ),
             market=evaluation_input.market,
-            engine_version="0.8.0",
+            engine_version="0.9.0",
         )
         incentivized = engine.evaluate(incentivized_input)
         self.assertGreater(incentivized.score.value, result.score.value)
@@ -133,5 +133,56 @@ class DeterministicEngineTests(TestCase):
         self.assertLessEqual(result.score.value, Decimal(100))
         self.assertNotIn(
             "La liquidez observada influye en una futura reventa.",
+            result.explanation.strengths,
+        )
+
+    def test_renormalizes_weights_when_equivalent_safety_test_is_unavailable(
+        self,
+    ) -> None:
+        evaluation_input = EvaluationInput(
+            buyer=BuyerProfile(
+                "CO",
+                "medellin",
+                Money(Decimal(150000000), "COP"),
+                12000,
+                5,
+                VehicleUse.MIXED,
+                4,
+                False,
+                ChargingAccess.NONE,
+            ),
+            vehicle=VehicleProfile(
+                "v3",
+                "Ford",
+                "Territory",
+                "Trend 1.5L FHEV AT",
+                2026,
+                Money(Decimal(139990000), "COP"),
+                Powertrain.HYBRID,
+                5,
+                None,
+                36,
+            ),
+            environment=EnvironmentProfile(
+                "CO",
+                "medellin",
+                "rules-3",
+                "2026-07-25",
+                Money(Decimal(0), "COP"),
+                Money(Decimal(0), "COP"),
+                0,
+                False,
+                29,
+            ),
+            market=MarketProfile("2026-07-25"),
+            engine_version="0.9.0",
+        )
+
+        result = DeterministicIicaEngine().evaluate(evaluation_input)
+
+        self.assertGreaterEqual(result.score.value, Decimal(0))
+        self.assertLessEqual(result.score.value, Decimal(100))
+        self.assertNotIn(
+            "La seguridad de esta versión es relevante para tu decisión.",
             result.explanation.strengths,
         )

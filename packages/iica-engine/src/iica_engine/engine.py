@@ -19,7 +19,7 @@ from .models import (
 class DeterministicIicaEngine:
     """Calcula una primera versión calibrable del IICA sin dependencias externas."""
 
-    VERSION = "0.8.0"
+    VERSION = "0.9.0"
 
     def evaluate(self, evaluation_input: EvaluationInput) -> EvaluationResult:
         """Entrega una sola puntuación y sus razones más relevantes."""
@@ -52,12 +52,6 @@ class DeterministicIicaEngine:
                 "El costo efectivo, incluidos impuestos e incentivos, se ajusta al presupuesto.",
             ),
             (
-                "seguridad",
-                vehicle.safety_score.value,
-                Decimal(15),
-                "La seguridad de esta versión es relevante para tu decisión.",
-            ),
-            (
                 "movilidad_local",
                 mobility_fit,
                 Decimal(15),
@@ -82,6 +76,15 @@ class DeterministicIicaEngine:
                 "La cobertura reduce incertidumbre en los primeros años.",
             ),
         ]
+        if vehicle.safety_score is not None:
+            components.append(
+                (
+                    "seguridad",
+                    vehicle.safety_score.value,
+                    Decimal(15),
+                    "La seguridad de esta versión es relevante para tu decisión.",
+                )
+            )
         if market.liquidity_score is not None:
             components.append(
                 (
