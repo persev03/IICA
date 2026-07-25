@@ -1,15 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '../../lib/supabase';
+import { MobilityMap } from './mobility-map';
 
 const steps = ['Perfil', 'Vehículos', 'Resultado'];
 const apiUrl =
   process.env.NEXT_PUBLIC_IICA_API_URL ||
   (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : '');
+const cityCenters: Record<string, [number, number]> = {
+  barbosa: [6.4392, -75.3314],
+  bello: [6.3373, -75.5579],
+  bogota: [4.711, -74.0721],
+  caldas: [6.0911, -75.6357],
+  copacabana: [6.3487, -75.5089],
+  envigado: [6.1759, -75.5917],
+  girardota: [6.3779, -75.4488],
+  itagui: [6.1719, -75.6114],
+  'la-estrella': [6.1577, -75.6432],
+  medellin: [6.2442, -75.5812],
+  sabaneta: [6.1515, -75.6166],
+};
 
 type City = {
   id: string;
@@ -90,6 +104,29 @@ export default function CalculatorPage() {
   const [authMessage, setAuthMessage] = useState('');
   const [history, setHistory] = useState<Evaluation[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [annualKilometers, setAnnualKilometers] = useState('');
+  const [routeDistance, setRouteDistance] = useState<number | null>(null);
+  const [routeDistanceSource, setRouteDistanceSource] = useState<
+    'route' | 'approximate' | null
+  >(null);
+  const [commuteDays, setCommuteDays] = useState(5);
+
+  const updateRouteDistance = useCallback(
+    (
+      distanceKilometers: number | null,
+      source: 'route' | 'approximate' | null,
+    ) => {
+      setRouteDistance(distanceKilometers);
+      setRouteDistanceSource(source);
+    },
+    [],
+  );
+
+  const estimatedAnnualKilometers =
+    routeDistance === null
+      ? null
+      : Math.round(routeDistance * 2 * commuteDays * 52);
 
   useEffect(() => {
     if (!supabase) return;
@@ -362,6 +399,8 @@ export default function CalculatorPage() {
                 ¿Dónde usarás principalmente el vehículo?
                 <select
                   name="city"
+                  value={selectedCity}
+                  onChange={(event) => setSelectedCity(event.target.value)}
                   required
                   disabled={loadingCatalog || !cities.length}
                 >
@@ -375,6 +414,56 @@ export default function CalculatorPage() {
                   ))}
                 </select>
               </label>
+              {selectedCity && cityCenters[selectedCity] ? (
+                <>
+                  <MobilityMap
+                    center={cityCenters[selectedCity]}
+                    cityCode={selectedCity}
+                    onDistanceChange={updateRouteDistance}
+                  />
+                  <div className="route-estimator">
+                    <label>
+                      Días por semana que haces este recorrido
+                      <input
+                        type="number"
+                        min="1"
+                        max="7"
+                        value={commuteDays}
+                        onChange={(event) =>
+                          setCommuteDays(Number(event.target.value) || 1)
+                        }
+                      />
+                    </label>
+                    <div className="route-estimate">
+                      <span>Estimación de movilidad anual</span>
+                      <strong>
+                        {estimatedAnnualKilometers === null
+                          ? 'Marca al menos dos puntos'
+                          : `${estimatedAnnualKilometers.toLocaleString('es-CO')} km/año`}
+                      </strong>
+                      {estimatedAnnualKilometers !== null ? (
+                        <>
+                          <small>
+                            Ida y vuelta · {commuteDays} días/semana · 52 semanas
+                            {routeDistanceSource === 'approximate'
+                              ? ' · distancia aproximada'
+                              : ''}
+                          </small>
+                          <button
+                            className="map-use-button"
+                            type="button"
+                            onClick={() =>
+                              setAnnualKilometers(String(estimatedAnnualKilometers))
+                            }
+                          >
+                            Usar esta estimación
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              ) : null}
               <label>
                 ¿Cuál será su uso principal?
                 <select name="use" defaultValue="mixed">
@@ -401,8 +490,15 @@ export default function CalculatorPage() {
                     name="kilometers"
                     inputMode="numeric"
                     placeholder="Ej. 12.000"
+                    value={annualKilometers}
+                    onChange={(event) =>
+                      setAnnualKilometers(event.target.value.replace(/\D/g, ''))
+                    }
                     required
                   />
+                  <small>
+                    Puedes escribirlos manualmente o usar la estimación del mapa.
+                  </small>
                 </label>
                 <label>
                   Años que planeas conservarlo

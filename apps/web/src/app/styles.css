@@ -120,6 +120,120 @@
   cursor: wait;
   opacity: 0.55;
 }
+.mobility-map {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #41433a;
+  border-radius: 12px;
+  background: #20211d;
+}
+.map-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.map-heading h3 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-size: 19px;
+  letter-spacing: -0.03em;
+}
+.map-kicker,
+.point-counter {
+  color: var(--lime);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.point-counter {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #303226;
+  white-space: nowrap;
+}
+.map-canvas {
+  z-index: 0;
+  width: 100%;
+  height: 330px;
+  overflow: hidden;
+  border: 1px solid #4b4d44;
+  border-radius: 10px;
+  background: #292a25;
+}
+.route-marker {
+  display: grid;
+  place-items: center;
+  border: 3px solid #151611;
+  border-radius: 50%;
+  background: var(--lime);
+  color: #11120f;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+}
+.route-marker span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+}
+.map-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.map-summary strong {
+  color: var(--ink);
+  white-space: nowrap;
+}
+.map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.profile-form .map-button,
+.profile-form .map-use-button {
+  padding: 0;
+  background: transparent;
+  color: var(--lime);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+.profile-form .map-button:disabled {
+  color: #6f7168;
+  cursor: default;
+}
+.route-estimator {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  gap: 12px;
+}
+.route-estimate {
+  display: grid;
+  gap: 5px;
+  align-content: center;
+  padding: 14px;
+  border-radius: 9px;
+  background: #25281b;
+}
+.route-estimate span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.route-estimate strong {
+  color: var(--lime);
+  font-size: 18px;
+}
+.route-estimate .map-use-button {
+  margin-top: 4px;
+}
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -312,6 +426,16 @@
   }
   .field-grid {
     grid-template-columns: 1fr;
+  }
+  .map-canvas {
+    height: 280px;
+  }
+  .map-summary,
+  .route-estimator {
+    grid-template-columns: 1fr;
+  }
+  .map-summary {
+    display: grid;
   }
 }
 * {
