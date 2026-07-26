@@ -104,7 +104,7 @@ export default function CalculatorPage() {
   const [authMessage, setAuthMessage] = useState('');
   const [history, setHistory] = useState<Evaluation[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState('medellin');
   const [annualKilometers, setAnnualKilometers] = useState('');
   const [routeDistance, setRouteDistance] = useState<number | null>(null);
   const [routeDistanceSource, setRouteDistanceSource] = useState<
@@ -413,6 +413,10 @@ export default function CalculatorPage() {
                     </option>
                   ))}
                 </select>
+                <small>
+                  Empezamos en Medellín para mostrar el mapa desde el primer momento.
+                  Puedes cambiarla por cualquier municipio disponible.
+                </small>
               </label>
               {selectedCity && cityCenters[selectedCity] ? (
                 <>
