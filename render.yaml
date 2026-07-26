@@ -21,6 +21,10 @@ services:
         sync: false
       - key: IICA_ADMIN_API_KEY
         generateValue: true
+      - key: IICA_GEOCODER_URL
+        value: https://nominatim.openstreetmap.org/search
+      - key: IICA_GEOCODER_USER_AGENT
+        value: IICA/0.1 (https://github.com/persev03/IICA)
 
   - type: web
     name: iica-admin

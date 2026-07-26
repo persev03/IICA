@@ -31,6 +31,20 @@ type City = {
   name: string;
 };
 
+const fallbackCities: City[] = [
+  { id: 'fallback-medellin', code: 'medellin', name: 'Medellín' },
+  { id: 'fallback-bello', code: 'bello', name: 'Bello' },
+  { id: 'fallback-envigado', code: 'envigado', name: 'Envigado' },
+  { id: 'fallback-itagui', code: 'itagui', name: 'Itagüí' },
+  { id: 'fallback-sabaneta', code: 'sabaneta', name: 'Sabaneta' },
+  { id: 'fallback-caldas', code: 'caldas', name: 'Caldas' },
+  { id: 'fallback-la-estrella', code: 'la-estrella', name: 'La Estrella' },
+  { id: 'fallback-copacabana', code: 'copacabana', name: 'Copacabana' },
+  { id: 'fallback-girardota', code: 'girardota', name: 'Girardota' },
+  { id: 'fallback-barbosa', code: 'barbosa', name: 'Barbosa' },
+  { id: 'fallback-bogota', code: 'bogota', name: 'Bogotá' },
+];
+
 type Vehicle = {
   id: string;
   brand: string;
@@ -106,27 +120,34 @@ export default function CalculatorPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState('medellin');
   const [annualKilometers, setAnnualKilometers] = useState('');
-  const [routeDistance, setRouteDistance] = useState<number | null>(null);
-  const [routeDistanceSource, setRouteDistanceSource] = useState<
-    'route' | 'approximate' | null
-  >(null);
-  const [commuteDays, setCommuteDays] = useState(5);
+  const [ownershipYears, setOwnershipYears] = useState(5);
+  const [mapPlaceCount, setMapPlaceCount] = useState(0);
+  const [mobilityEstimate, setMobilityEstimate] = useState<{
+    annualKilometers: number | null;
+    annualMinutes: number | null;
+    source: 'route' | 'approximate' | null;
+  }>({
+    annualKilometers: null,
+    annualMinutes: null,
+    source: null,
+  });
 
-  const updateRouteDistance = useCallback(
-    (
-      distanceKilometers: number | null,
-      source: 'route' | 'approximate' | null,
-    ) => {
-      setRouteDistance(distanceKilometers);
-      setRouteDistanceSource(source);
-    },
+  const updateMobilityEstimate = useCallback(
+    (estimate: {
+      annualKilometers: number | null;
+      annualMinutes: number | null;
+      source: 'route' | 'approximate' | null;
+    }) => setMobilityEstimate(estimate),
     [],
   );
-
-  const estimatedAnnualKilometers =
-    routeDistance === null
-      ? null
-      : Math.round(routeDistance * 2 * commuteDays * 52);
+  const updateMapPlaceCount = useCallback(
+    (count: number) => setMapPlaceCount(count),
+    [],
+  );
+  const displayCities = cities.length ? cities : fallbackCities;
+  const selectedCityName =
+    displayCities.find((city) => city.code === selectedCity)?.name ??
+    (selectedCity === 'medellin' ? 'Medellín' : 'el municipio seleccionado');
 
   useEffect(() => {
     if (!supabase) return;
@@ -305,16 +326,23 @@ export default function CalculatorPage() {
           Perfil de compra · {step} de {steps.length}
         </span>
       </nav>
-      <section className="calculator-shell">
+      <section
+        className={`calculator-shell ${step === 1 ? 'calculator-shell-map' : ''}`}
+      >
         <aside>
           <p className="eyebrow">
             <span />
-            Tu punto de partida
+            {step === 1 ? 'Tu vida sobre el mapa' : 'Tu punto de partida'}
           </p>
-          <h1>Cuéntanos cómo vives tu movilidad.</h1>
+          <h1>
+            {step === 1
+              ? 'Tu rutina ya dibuja el vehículo que necesitas.'
+              : 'Cuéntanos cómo vives tu movilidad.'}
+          </h1>
           <p>
-            Cada respuesta modifica el resultado. El cálculo usa únicamente datos
-            versionados y trazables.
+            {step === 1
+              ? 'Casa, trabajo, estudio, familia: conecta los lugares que de verdad mueven tus días.'
+              : 'Cada respuesta modifica el resultado. El cálculo usa únicamente datos versionados y trazables.'}
           </p>
           <ol className="steps" aria-label="Progreso de la evaluación">
             {steps.map((label, index) => (
@@ -329,9 +357,10 @@ export default function CalculatorPage() {
             ))}
           </ol>
         </aside>
-        <div className="step-content" aria-live="polite">
+        <div className="step-content">
           {step === 1 ? (
-            <form className="profile-form" onSubmit={startEvaluation}>
+            <form className="profile-form profile-form-map" onSubmit={startEvaluation}>
+              <p className="form-kicker">Paso 1 de 3 · Tu movilidad real</p>
               {supabase ? (
                 <div className="account-panel">
                   {session ? (
@@ -394,20 +423,26 @@ export default function CalculatorPage() {
                   {authMessage ? <small>{authMessage}</small> : null}
                 </div>
               ) : null}
-              {catalogError ? <p className="form-error">{catalogError}</p> : null}
-              <label>
+              <label className="city-selector">
                 ¿Dónde usarás principalmente el vehículo?
                 <select
                   name="city"
                   value={selectedCity}
-                  onChange={(event) => setSelectedCity(event.target.value)}
+                  onChange={(event) => {
+                    const nextCity = event.target.value;
+                    if (
+                      mapPlaceCount &&
+                      !window.confirm(
+                        'Cambiar de municipio limpiará los lugares y trayectos de este mapa. ¿Continuar?',
+                      )
+                    ) {
+                      return;
+                    }
+                    setSelectedCity(nextCity);
+                  }}
                   required
-                  disabled={loadingCatalog || !cities.length}
                 >
-                  <option value="">
-                    {loadingCatalog ? 'Cargando ciudades…' : 'Selecciona una ciudad'}
-                  </option>
-                  {cities.map((city) => (
+                  {displayCities.map((city) => (
                     <option value={city.code} key={city.id}>
                       {city.name}, Colombia
                     </option>
@@ -419,55 +454,20 @@ export default function CalculatorPage() {
                 </small>
               </label>
               {selectedCity && cityCenters[selectedCity] ? (
-                <>
-                  <MobilityMap
-                    center={cityCenters[selectedCity]}
-                    cityCode={selectedCity}
-                    onDistanceChange={updateRouteDistance}
-                  />
-                  <div className="route-estimator">
-                    <label>
-                      Días por semana que haces este recorrido
-                      <input
-                        type="number"
-                        min="1"
-                        max="7"
-                        value={commuteDays}
-                        onChange={(event) =>
-                          setCommuteDays(Number(event.target.value) || 1)
-                        }
-                      />
-                    </label>
-                    <div className="route-estimate">
-                      <span>Estimación de movilidad anual</span>
-                      <strong>
-                        {estimatedAnnualKilometers === null
-                          ? 'Marca al menos dos puntos'
-                          : `${estimatedAnnualKilometers.toLocaleString('es-CO')} km/año`}
-                      </strong>
-                      {estimatedAnnualKilometers !== null ? (
-                        <>
-                          <small>
-                            Ida y vuelta · {commuteDays} días/semana · 52 semanas
-                            {routeDistanceSource === 'approximate'
-                              ? ' · distancia aproximada'
-                              : ''}
-                          </small>
-                          <button
-                            className="map-use-button"
-                            type="button"
-                            onClick={() =>
-                              setAnnualKilometers(String(estimatedAnnualKilometers))
-                            }
-                          >
-                            Usar esta estimación
-                          </button>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                </>
+                <MobilityMap
+                  apiUrl={apiUrl}
+                  center={cityCenters[selectedCity]}
+                  cityCode={selectedCity}
+                  cityName={selectedCityName}
+                  ownershipYears={ownershipYears}
+                  onEstimateChange={updateMobilityEstimate}
+                  onPlaceCountChange={updateMapPlaceCount}
+                  onUseEstimate={(kilometers) =>
+                    setAnnualKilometers(String(kilometers))
+                  }
+                />
               ) : null}
+              {catalogError ? <p className="form-error">{catalogError}</p> : null}
               <label>
                 ¿Cuál será su uso principal?
                 <select name="use" defaultValue="mixed">
@@ -501,7 +501,10 @@ export default function CalculatorPage() {
                     required
                   />
                   <small>
-                    Puedes escribirlos manualmente o usar la estimación del mapa.
+                    {mobilityEstimate.annualKilometers !== null &&
+                    annualKilometers === String(mobilityEstimate.annualKilometers)
+                      ? 'Estimación tomada de tu mapa de vida.'
+                      : 'Puedes escribirlos manualmente o usar la estimación del mapa.'}
                   </small>
                 </label>
                 <label>
@@ -511,7 +514,10 @@ export default function CalculatorPage() {
                     type="number"
                     min="1"
                     max="30"
-                    defaultValue="5"
+                    value={ownershipYears}
+                    onChange={(event) =>
+                      setOwnershipYears(Number(event.target.value) || 1)
+                    }
                     required
                   />
                 </label>
@@ -553,8 +559,8 @@ export default function CalculatorPage() {
               <p className="form-kicker">Paso 2 de 3</p>
               <h2>¿Qué versiones quieres comparar?</h2>
               <p className="form-copy">
-                Solo aparecen versiones con precio vigente y evidencia verificable.
-                Si una versión no tiene una prueba NCAP equivalente, IICA omite ese
+                Solo aparecen versiones con precio vigente y evidencia verificable. Si
+                una versión no tiene una prueba NCAP equivalente, IICA omite ese
                 componente y reajusta el cálculo.
               </p>
               {evaluationError ? (

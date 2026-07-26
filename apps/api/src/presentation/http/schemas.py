@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, StringConstraints
 
 
 class CountryResponse(BaseModel):
@@ -204,3 +205,23 @@ class EvaluationResponse(BaseModel):
     city: str
     evaluated_at: str
     results: list[EvaluatedVehicleResponse]
+
+
+class PlaceSearchRequest(BaseModel):
+    query: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=3, max_length=160),
+    ]
+    city_name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=150),
+    ]
+
+
+class PlaceSearchResponse(BaseModel):
+    id: str
+    name: str
+    display_name: str
+    latitude: float
+    longitude: float
+    category: str

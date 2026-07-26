@@ -8,10 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from presentation.http.routers.catalog import router as catalog_router
 from presentation.http.routers.evaluations import router as evaluations_router
+from presentation.http.routers.places import router as places_router
 
 app = FastAPI(
     title="IICA API",
-    version="0.4.0",
+    version="0.5.0",
     description="API del Índice Inteligente de Compra de Automóviles.",
 )
 allowed_origins = [
@@ -34,6 +35,7 @@ app.add_middleware(
 )
 app.include_router(catalog_router)
 app.include_router(evaluations_router)
+app.include_router(places_router)
 
 
 @app.get("/health", tags=["system"])
