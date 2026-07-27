@@ -224,3 +224,21 @@ class EvaluationRecord(Base):
     result_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
     engine_version: Mapped[str] = mapped_column(String(32), nullable=False)
     data_version: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class AiAssistantRecord(Base):
+    """Auditoría de respuestas asistivas generadas por un LLM local."""
+
+    __tablename__ = "ai_assistant_records"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    user_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    city_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    question: Mapped[str] = mapped_column(Text, nullable=False)
+    llm_provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    llm_model: Mapped[str] = mapped_column(String(120), nullable=False)
+    prompt_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    response_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

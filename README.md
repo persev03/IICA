@@ -10,7 +10,8 @@ El repositorio incluye la web, el panel administrativo, la API FastAPI, el
 motor determinista, migraciones PostgreSQL, autenticación con Supabase y
 configuración para desplegar la API en Cloud Run. La calculadora solicita
 versiones del catálogo y solo produce un resultado cuando existen datos
-vigentes y trazables.
+vigentes y trazables. También integra IA moderna asistiva con Qwen local
+(Ollama) para explicar resultados sin alterar el score determinista.
 
 ## Estructura
 

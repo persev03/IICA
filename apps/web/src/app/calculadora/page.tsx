@@ -155,6 +155,20 @@ type Evaluation = {
   results: EvaluationResult[];
 };
 
+type AiSource = {
+  title: string;
+  source_url: string | null;
+  evidence: string;
+};
+
+type AiExplainResponse = {
+  answer: string;
+  disclaimer: string;
+  model: string;
+  sources: AiSource[];
+  evaluation: Evaluation;
+};
+
 function parseNumber(value: FormDataEntryValue | null) {
   return Number(String(value ?? '').replace(/\D/g, ''));
 }
@@ -177,6 +191,12 @@ export default function CalculatorPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [profile, setProfile] = useState<BuyerProfile | null>(null);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [aiQuestion, setAiQuestion] = useState(
+    'Explica por que el primer vehiculo obtuvo el mejor resultado para mi perfil.',
+  );
+  const [aiResponse, setAiResponse] = useState<AiExplainResponse | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
   const [catalogError, setCatalogError] = useState('');
   const [evaluationError, setEvaluationError] = useState('');
   const [loadingCatalog, setLoadingCatalog] = useState(true);
@@ -187,7 +207,12 @@ export default function CalculatorPage() {
   const [history, setHistory] = useState<Evaluation[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState('medellin');
+  const [primaryUse, setPrimaryUse] = useState('mixed');
+  const [budgetInput, setBudgetInput] = useState('');
   const [annualKilometers, setAnnualKilometers] = useState('');
+  const [householdSize, setHouseholdSize] = useState(1);
+  const [chargingAccess, setChargingAccess] = useState('none');
+  const [frequentRoadTrips, setFrequentRoadTrips] = useState(false);
   const [kilometersSource, setKilometersSource] = useState<
     'empty' | 'map' | 'manual'
   >('empty');
@@ -196,6 +221,10 @@ export default function CalculatorPage() {
   const [preferenceOrder, setPreferenceOrder] = useState<PreferenceCriterion[]>(
     preferenceOptions.map((option) => option.id),
   );
+  const [draggedCriterion, setDraggedCriterion] =
+    useState<PreferenceCriterion | null>(null);
+  const [dragOverCriterion, setDragOverCriterion] =
+    useState<PreferenceCriterion | null>(null);
   const [mapPlaceCount, setMapPlaceCount] = useState(0);
   const [mobilityEstimate, setMobilityEstimate] = useState<{
     annualKilometers: number | null;
@@ -217,6 +246,22 @@ export default function CalculatorPage() {
   );
   const updateMapPlaceCount = useCallback(
     (count: number) => setMapPlaceCount(count),
+    [],
+  );
+
+  const reorderPreference = useCallback(
+    (moved: PreferenceCriterion, target: PreferenceCriterion) => {
+      if (moved === target) return;
+      setPreferenceOrder((current) => {
+        const fromIndex = current.indexOf(moved);
+        const toIndex = current.indexOf(target);
+        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return current;
+        const next = [...current];
+        next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
+        return next;
+      });
+    },
     [],
   );
 
@@ -318,16 +363,25 @@ export default function CalculatorPage() {
 
   function startEvaluation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+
+    const budget = parseNumber(budgetInput);
+    const kilometers = parseNumber(annualKilometers);
+    if (!budget || !kilometers) {
+      setEvaluationError(
+        'Completa presupuesto y kilometros anuales con valores validos.',
+      );
+      return;
+    }
+
     setProfile({
-      cityCode: String(data.get('city')),
-      primaryUse: String(data.get('use')),
-      budget: parseNumber(data.get('budget')),
-      annualKilometers: parseNumber(data.get('kilometers')),
-      ownershipYears: Number(data.get('ownership-years')),
-      householdSize: Number(data.get('household-size')),
-      frequentRoadTrips: data.get('frequent-road-trips') === 'on',
-      chargingAccess: String(data.get('charging-access')),
+      cityCode: selectedCity,
+      primaryUse,
+      budget,
+      annualKilometers: kilometers,
+      ownershipYears,
+      householdSize,
+      frequentRoadTrips,
+      chargingAccess,
       preferenceOrder,
     });
     setEvaluationError('');
@@ -374,6 +428,8 @@ export default function CalculatorPage() {
         );
       }
       setEvaluation(payload as Evaluation);
+      setAiResponse(null);
+      setAiError('');
       if (session) {
         setHistory((current) => [payload as Evaluation, ...current].slice(0, 20));
       }
@@ -386,6 +442,67 @@ export default function CalculatorPage() {
       );
     } finally {
       setCalculating(false);
+    }
+  }
+
+  async function requestAiExplanation() {
+    if (!apiUrl) {
+      setAiError('El servicio de IA no esta configurado en este despliegue.');
+      return;
+    }
+    if (!profile || !selectedVehicleIds.length) {
+      setAiError(
+        'Para generar explicaciones IA, primero calcula un resultado en esta sesion.',
+      );
+      return;
+    }
+    if (aiQuestion.trim().length < 5) {
+      setAiError('Escribe una pregunta un poco mas especifica para la IA.');
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session) headers.Authorization = `Bearer ${session.access_token}`;
+      const response = await fetch(`${apiUrl}/v1/ai/evaluations/explain`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          evaluation: {
+            city_code: profile.cityCode,
+            budget: profile.budget,
+            annual_kilometers: profile.annualKilometers,
+            ownership_years: profile.ownershipYears,
+            primary_use: profile.primaryUse,
+            household_size: profile.householdSize,
+            frequent_road_trips: profile.frequentRoadTrips,
+            charging_access: profile.chargingAccess,
+            preference_order: profile.preferenceOrder,
+            vehicle_ids: selectedVehicleIds,
+          },
+          question: aiQuestion.trim(),
+        }),
+      });
+      const payload = (await response.json()) as AiExplainResponse | { detail?: string };
+      if (!response.ok) {
+        throw new Error(
+          'detail' in payload && payload.detail
+            ? payload.detail
+            : 'No fue posible generar la explicacion IA.',
+        );
+      }
+      setAiResponse(payload as AiExplainResponse);
+      setEvaluation((payload as AiExplainResponse).evaluation);
+    } catch (error) {
+      setAiError(
+        error instanceof Error
+          ? error.message
+          : 'No fue posible generar la explicacion IA en este momento.',
+      );
+    } finally {
+      setAiLoading(false);
     }
   }
 
@@ -466,6 +583,8 @@ export default function CalculatorPage() {
                             key={`${record.evaluated_at}-${index}`}
                             onClick={() => {
                               setEvaluation(record);
+                              setAiResponse(null);
+                              setAiError('');
                               setStep(3);
                             }}
                           >
@@ -561,6 +680,10 @@ export default function CalculatorPage() {
                     <h2 id="preference-ranker-title">
                       ¿Qué debe resolver primero tu próximo automóvil?
                     </h2>
+                    <small>
+                      Arrastra y suelta para reordenar. También puedes usar los
+                      controles de subir y bajar.
+                    </small>
                   </div>
                   <p>
                     Ordena los criterios. El primero tendrá mayor peso en tu IICA y el
@@ -574,11 +697,44 @@ export default function CalculatorPage() {
                     );
                     if (!option) return null;
                     return (
-                      <li key={criterion}>
+                      <li
+                        key={criterion}
+                        className={`preference-item ${
+                          draggedCriterion === criterion ? 'dragging' : ''
+                        } ${dragOverCriterion === criterion ? 'drag-over' : ''}`}
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', criterion);
+                          setDraggedCriterion(criterion);
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = 'move';
+                          setDragOverCriterion(criterion);
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const moved =
+                            (event.dataTransfer.getData('text/plain') as PreferenceCriterion) ||
+                            draggedCriterion;
+                          if (!moved) return;
+                          reorderPreference(moved, criterion);
+                          setDraggedCriterion(null);
+                          setDragOverCriterion(null);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedCriterion(null);
+                          setDragOverCriterion(null);
+                        }}
+                      >
                         <span className="preference-rank">{index + 1}</span>
                         <span>
                           <strong>{option.label}</strong>
                           <small>{option.description}</small>
+                        </span>
+                        <span className="preference-drag-handle" aria-hidden="true">
+                          Arrastrar
                         </span>
                         <span className="preference-controls">
                           <button
@@ -624,7 +780,11 @@ export default function CalculatorPage() {
               {catalogError ? <p className="form-error">{catalogError}</p> : null}
               <label>
                 ¿Cuál será su uso principal?
-                <select name="use" defaultValue="mixed">
+                <select
+                  name="use"
+                  value={primaryUse}
+                  onChange={(event) => setPrimaryUse(event.target.value)}
+                >
                   <option value="urban">Ciudad</option>
                   <option value="mixed">Mixto</option>
                   <option value="road_trips">Viajes frecuentes</option>
@@ -639,6 +799,10 @@ export default function CalculatorPage() {
                     name="budget"
                     inputMode="numeric"
                     placeholder="Ej. 100.000.000"
+                    value={budgetInput}
+                    onChange={(event) =>
+                      setBudgetInput(event.target.value.replace(/\D/g, ''))
+                    }
                     required
                   />
                 </label>
@@ -687,14 +851,21 @@ export default function CalculatorPage() {
                     type="number"
                     min="1"
                     max="20"
-                    defaultValue="1"
+                    value={householdSize}
+                    onChange={(event) =>
+                      setHouseholdSize(Math.max(1, Number(event.target.value) || 1))
+                    }
                     required
                   />
                 </label>
               </div>
               <label>
                 Acceso habitual a carga
-                <select name="charging-access" defaultValue="none">
+                <select
+                  name="charging-access"
+                  value={chargingAccess}
+                  onChange={(event) => setChargingAccess(event.target.value)}
+                >
                   <option value="none">No tengo acceso</option>
                   <option value="home">En casa</option>
                   <option value="work">En el trabajo</option>
@@ -702,8 +873,13 @@ export default function CalculatorPage() {
                 </select>
               </label>
               <label className="check">
-                <input type="checkbox" name="frequent-road-trips" /> Hago viajes por
-                carretera con frecuencia
+                <input
+                  type="checkbox"
+                  name="frequent-road-trips"
+                  checked={frequentRoadTrips}
+                  onChange={(event) => setFrequentRoadTrips(event.target.checked)}
+                />{' '}
+                Hago viajes por carretera con frecuencia
               </label>
               <button
                 className="button button-primary"
@@ -852,6 +1028,58 @@ export default function CalculatorPage() {
                   </article>
                 ))}
               </div>
+              <section className="ai-assistant-panel" aria-labelledby="ai-assistant-title">
+                <div className="ai-assistant-head">
+                  <p className="form-kicker">IA moderna asistiva</p>
+                  <h3 id="ai-assistant-title">Pregunta a Qwen sobre tu resultado</h3>
+                  <small>
+                    La IA explica con evidencia, pero no altera el score ni reemplaza el motor determinista.
+                  </small>
+                </div>
+                <label>
+                  Tu pregunta
+                  <textarea
+                    value={aiQuestion}
+                    onChange={(event) => setAiQuestion(event.target.value)}
+                    rows={3}
+                    placeholder="Ejemplo: Que riesgo es el mas importante para mi caso y por que?"
+                  />
+                </label>
+                <button
+                  className="button button-primary"
+                  type="button"
+                  disabled={aiLoading}
+                  onClick={() => void requestAiExplanation()}
+                >
+                  {aiLoading ? 'Consultando a Qwen…' : 'Explicar con IA'} <span>→</span>
+                </button>
+                {aiError ? (
+                  <p className="form-error" role="alert">
+                    {aiError}
+                  </p>
+                ) : null}
+                {aiResponse ? (
+                  <article className="ai-answer-card">
+                    <p>{aiResponse.answer}</p>
+                    <small>{aiResponse.disclaimer}</small>
+                    <strong>Modelo: {aiResponse.model}</strong>
+                    <h4>Fuentes usadas</h4>
+                    <ul>
+                      {aiResponse.sources.map((source) => (
+                        <li key={`${source.title}-${source.source_url ?? 'none'}`}>
+                          <span>{source.title}</span>
+                          <p>{source.evidence}</p>
+                          {source.source_url ? (
+                            <a href={source.source_url} target="_blank" rel="noreferrer">
+                              Ver fuente ↗
+                            </a>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ) : null}
+              </section>
               <button className="text-button" type="button" onClick={() => setStep(2)}>
                 ← Editar vehículos
               </button>

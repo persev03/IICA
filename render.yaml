@@ -25,6 +25,14 @@ services:
         value: https://nominatim.openstreetmap.org/search
       - key: IICA_GEOCODER_USER_AGENT
         value: IICA/0.1 (https://github.com/persev03/IICA)
+      - key: IICA_OLLAMA_MODEL
+        value: qwen2.5:7b-instruct
+      - key: IICA_OLLAMA_CHAT_URL
+        sync: false
+      - key: IICA_OLLAMA_TIMEOUT_SECONDS
+        value: "25"
+      - key: IICA_OLLAMA_TEMPERATURE
+        value: "0.2"
 
   - type: web
     name: iica-admin

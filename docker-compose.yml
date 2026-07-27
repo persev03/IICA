@@ -18,14 +18,22 @@ services:
     ports: ['6379:6379']
     volumes: [redis-data:/data]
 
+  ollama:
+    image: ollama/ollama:latest
+    ports: ['11434:11434']
+    volumes: [ollama-data:/root/.ollama]
+
   api:
     build: { context: ., dockerfile: docker/api.Dockerfile }
     environment:
       DATABASE_URL: postgresql+psycopg://iica:iica@postgres:5432/iica
       IICA_ADMIN_API_KEY: local-development-only
       IICA_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+      IICA_OLLAMA_CHAT_URL: http://ollama:11434/api/chat
+      IICA_OLLAMA_MODEL: qwen2.5:7b-instruct
     depends_on:
       postgres: { condition: service_healthy }
+      ollama: { condition: service_started }
     command: sh -c "alembic -c database/alembic.ini upgrade head && uvicorn presentation.http.main:app --host 0.0.0.0 --port 8000 --reload"
     ports: ['8000:8000']
     volumes: [.:/workspace]
@@ -49,5 +57,6 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  ollama-data:
   web-node-modules:
   admin-node-modules:

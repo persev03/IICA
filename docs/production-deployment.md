@@ -14,6 +14,13 @@ La URL resultante `https://iica-api.onrender.com` debe guardarse como variable
 `IICA_API_URL` del repositorio en GitHub. Las instancias gratuitas pueden
 suspenderse por inactividad y tardar en responder en el primer acceso.
 
+La funcionalidad de IA moderna (`/v1/ai/evaluations/explain`) requiere un
+endpoint de Ollama accesible desde la API (`IICA_OLLAMA_CHAT_URL`) y un modelo
+Qwen descargado (`IICA_OLLAMA_MODEL`). En planes gratuitos de Render no suele
+ser viable ejecutar Ollama en el mismo servicio por memoria/CPU, por lo que se
+recomienda usar esta función en entornos propios (Docker o VM) o un servicio de
+inferencia compatible.
+
 El mismo Blueprint publica el panel estático en
 `https://iica-admin.onrender.com`. En Supabase Auth, agrega esa URL tanto como
 Site URL como en la lista de Redirect URLs para habilitar el enlace mágico.
@@ -79,6 +86,15 @@ _ADMIN_EMAILS=admin@example.com
 ```
 
 La API aplica las migraciones Alembic antes de iniciar Uvicorn.
+
+Variables adicionales para IA asistiva:
+
+```text
+IICA_OLLAMA_MODEL=qwen2.5:7b-instruct
+IICA_OLLAMA_CHAT_URL=http://<host-ollama>:11434/api/chat
+IICA_OLLAMA_TIMEOUT_SECONDS=25
+IICA_OLLAMA_TEMPERATURE=0.2
+```
 
 ## 3. Cloudflare Pages
 

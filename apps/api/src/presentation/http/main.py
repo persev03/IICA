@@ -6,6 +6,7 @@ from re import split
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from presentation.http.routers.ai_assistant import router as ai_assistant_router
 from presentation.http.routers.catalog import router as catalog_router
 from presentation.http.routers.evaluations import router as evaluations_router
 from presentation.http.routers.places import router as places_router
@@ -36,6 +37,7 @@ app.add_middleware(
 app.include_router(catalog_router)
 app.include_router(evaluations_router)
 app.include_router(places_router)
+app.include_router(ai_assistant_router)
 
 
 @app.get("/health", tags=["system"])

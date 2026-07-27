@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 from os import environ
 from unittest import TestCase
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -12,6 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from application.evaluations import _active_tax_rate
 from infrastructure.persistence.models import (
+    AiAssistantRecord,
     Base,
     City,
     Country,
@@ -170,6 +172,7 @@ class EvaluationIntegrationTests(TestCase):
         )
         Base.metadata.create_all(engine)
         session_factory = sessionmaker(bind=engine)
+        self.session_factory = session_factory
 
         with session_factory() as session:
             country = Country(code="CO", name="Colombia", currency_code="COP")
@@ -296,3 +299,63 @@ class EvaluationIntegrationTests(TestCase):
         self.assertEqual(history.status_code, 200)
         self.assertEqual(len(history.json()), 1)
         self.assertEqual(history.json()[0], evaluation.json())
+
+    def test_ai_explanation_uses_deterministic_evaluation_as_context(self) -> None:
+        with patch(
+            "application.ai_assistant._call_ollama_chat",
+            return_value="La mejor opción mantiene una compra sólida según el score.",
+        ):
+            response = self.client.post(
+                "/v1/ai/evaluations/explain",
+                json={
+                    "evaluation": {
+                        "city_code": "bogota",
+                        "budget": "100000000",
+                        "annual_kilometers": 12000,
+                        "ownership_years": 5,
+                        "primary_use": "mixed",
+                        "household_size": 3,
+                        "frequent_road_trips": False,
+                        "charging_access": "none",
+                        "vehicle_ids": [self.vehicle_id],
+                    },
+                    "question": "Explica por qué este vehículo es buena compra.",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["model"], "qwen2.5:7b-instruct")
+        self.assertIn("No reemplaza el motor determinista", payload["disclaimer"])
+        self.assertEqual(payload["evaluation"]["results"][0]["score"], "78.07")
+        self.assertTrue(payload["sources"])
+
+    def test_ai_explanation_creates_audit_record(self) -> None:
+        app.dependency_overrides[optional_user_id] = lambda: "user-verified"
+        with patch(
+            "application.ai_assistant._call_ollama_chat",
+            return_value="Resumen asistivo con evidencia del cálculo.",
+        ):
+            response = self.client.post(
+                "/v1/ai/evaluations/explain",
+                json={
+                    "evaluation": {
+                        "city_code": "bogota",
+                        "budget": "100000000",
+                        "annual_kilometers": 12000,
+                        "ownership_years": 5,
+                        "primary_use": "mixed",
+                        "household_size": 3,
+                        "frequent_road_trips": False,
+                        "charging_access": "none",
+                        "vehicle_ids": [self.vehicle_id],
+                    },
+                    "question": "Resume riesgos y fortalezas.",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        with self.session_factory() as session:
+            rows = session.query(AiAssistantRecord).all()
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0].user_id, "user-verified")

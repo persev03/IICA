@@ -241,6 +241,25 @@ class EvaluationResponse(BaseModel):
     results: list[EvaluatedVehicleResponse]
 
 
+class AiExplainRequest(BaseModel):
+    evaluation: EvaluationRequest
+    question: str = Field(min_length=5, max_length=600)
+
+
+class AiSourceResponse(BaseModel):
+    title: str
+    source_url: str | None
+    evidence: str
+
+
+class AiExplainResponse(BaseModel):
+    answer: str
+    disclaimer: str
+    model: str
+    sources: list[AiSourceResponse]
+    evaluation: EvaluationResponse
+
+
 class PlaceSearchRequest(BaseModel):
     query: Annotated[
         str,
