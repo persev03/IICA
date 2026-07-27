@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from src.presentation.http.schemas import EvaluationRequest
+from presentation.http.schemas import EvaluationRequest
 
 
 def test_evaluation_accepts_more_than_two_vehicles() -> None:
