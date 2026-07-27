@@ -58,5 +58,9 @@ Fallback en nube (gratis con cuenta Hugging Face):
 La API intenta Ollama primero; si no responde, usa Hugging Face cuando
 `IICA_HF_API_KEY` está configurado.
 
+Si ninguno de los dos proveedores está disponible, la API responde una
+explicación de contingencia basada en el resultado determinista para no romper
+la experiencia de usuario.
+
 Cada respuesta queda auditada en la tabla `ai_assistant_records` con prompt,
 salida, modelo y trazabilidad de usuario cuando existe sesión autenticada.

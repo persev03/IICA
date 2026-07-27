@@ -70,15 +70,23 @@ def explain_evaluation_with_qwen(
         config=config,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
+        evaluation=evaluation,
     )
     sources = _extract_sources(evaluation)
 
+    disclaimer = (
+        "Respuesta asistiva generada por IA moderna con Qwen. "
+        "No reemplaza el motor determinista ni modifica el score."
+    )
+    if provider == "deterministic-fallback":
+        disclaimer = (
+            "Respuesta de contingencia basada en reglas y evidencia del cálculo. "
+            "Configura IICA_HF_API_KEY u Ollama para activar explicación generativa completa."
+        )
+
     response = AiExplainResponse(
         answer=answer,
-        disclaimer=(
-            "Respuesta asistiva generada por IA moderna con Qwen. "
-            "No reemplaza el motor determinista ni modifica el score."
-        ),
+        disclaimer=disclaimer,
         model=model,
         sources=sources,
         evaluation=evaluation,
@@ -212,6 +220,7 @@ def _call_best_available_chat(
     config: OllamaConfig,
     system_prompt: str,
     user_prompt: str,
+    evaluation: EvaluationResponse,
 ) -> tuple[str, str, str]:
     try:
         content = _call_ollama_chat(
@@ -223,16 +232,48 @@ def _call_best_available_chat(
     except AssistantUnavailableError as ollama_error:
         hf_config = _huggingface_config()
         if hf_config is None:
-            raise AssistantUnavailableError(
-                "No fue posible contactar al asistente local de IA (Ollama). "
-                "Configura IICA_HF_API_KEY para habilitar fallback gratis en nube."
-            ) from ollama_error
-        content = _call_huggingface_chat(
-            config=hf_config,
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
+            return (
+                "deterministic-fallback",
+                "iica-explainer-v1",
+                _build_deterministic_fallback_answer(evaluation),
+            )
+        try:
+            content = _call_huggingface_chat(
+                config=hf_config,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+            )
+            return ("huggingface", hf_config.model, content)
+        except AssistantUnavailableError:
+            return (
+                "deterministic-fallback",
+                "iica-explainer-v1",
+                _build_deterministic_fallback_answer(evaluation),
+            )
+
+
+def _build_deterministic_fallback_answer(evaluation: EvaluationResponse) -> str:
+    if not evaluation.results:
+        return (
+            "No hay resultados disponibles para explicar en este momento. "
+            "Vuelve a ejecutar la comparación para generar evidencia."
         )
-        return ("huggingface", hf_config.model, content)
+
+    top = evaluation.results[0]
+    strengths = ", ".join(top.strengths[:2]) if top.strengths else "sin fortalezas destacadas"
+    weaknesses = ", ".join(top.weaknesses[:2]) if top.weaknesses else "sin riesgos críticos"
+    recommendation = (
+        top.recommendations[0]
+        if top.recommendations
+        else "Compara con al menos una alternativa equivalente antes de decidir."
+    )
+
+    return (
+        f"La mejor opción del cálculo actual es {top.name} con score {top.score} "
+        f"y clasificación {top.classification}. Sus principales fortalezas son {strengths}, "
+        f"mientras que los riesgos a revisar son {weaknesses}. "
+        f"Recomendación principal: {recommendation}."
+    )
 
 
 def _build_context(evaluation: EvaluationResponse) -> str:
