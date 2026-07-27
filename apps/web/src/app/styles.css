@@ -47,14 +47,34 @@
 }
 .calculator-shell-map {
   max-width: 1540px;
-  grid-template-columns: minmax(230px, 0.34fr) minmax(0, 1.66fr);
-  gap: 48px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 38px;
   padding: 52px 30px 110px;
 }
 .calculator-shell-map > aside {
-  position: sticky;
-  top: 96px;
-  align-self: start;
+  position: static;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+.calculator-shell-map > aside .eyebrow {
+  margin-bottom: 15px;
+}
+.calculator-shell-map > aside h1 {
+  max-width: 1060px;
+  font-size: clamp(42px, 5vw, 74px);
+}
+.calculator-shell-map > aside > p:not(.eyebrow) {
+  max-width: 720px;
+  margin: 22px auto 0;
+}
+.calculator-shell-map .steps {
+  display: grid;
+  width: min(100%, 680px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 28px;
+  padding-top: 16px;
+  text-align: left;
 }
 .calculator-shell h1 {
   font-size: clamp(42px, 4.7vw, 66px);
@@ -597,8 +617,13 @@
 }
 .journey-builder {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1.2fr)) repeat(2, minmax(120px, 0.6fr));
+  grid-template-columns: repeat(2, minmax(0, 1.2fr)) repeat(2, minmax(130px, 0.62fr));
   gap: 10px;
+}
+.journey-builder label > small {
+  min-height: 14px;
+  color: var(--lime);
+  font-size: 10px;
 }
 .journey-options {
   display: flex;
@@ -702,21 +727,18 @@
   font-size: clamp(17px, 1.8vw, 24px);
   letter-spacing: -0.03em;
 }
-.profile-form .mobility-story .map-use-button {
-  min-height: 44px;
-  justify-self: start;
-  padding: 0 17px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--lime);
-  color: var(--black);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-}
 .mobility-story > small,
-.mobility-story > .map-use-button {
+.mobility-story > .estimate-synced-message {
   grid-column: 2;
+}
+.mobility-story .estimate-synced-message {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid rgb(217 255 101 / 28%);
+  border-radius: 10px;
+  background: rgb(217 255 101 / 8%);
+  color: #d8e9ad;
+  font-size: 11px;
 }
 .map-privacy {
   max-width: 950px;
@@ -819,6 +841,86 @@
   line-height: 1.5;
   margin: -8px 0 4px;
 }
+.vehicle-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.vehicle-picker legend {
+  margin-bottom: 12px;
+  color: #d8d5cd;
+  font-size: 13px;
+}
+.vehicle-picker legend strong {
+  color: var(--lime);
+}
+.vehicle-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: min(58vh, 580px);
+  overflow: auto;
+  padding: 2px 7px 2px 2px;
+  scrollbar-color: #56594d transparent;
+}
+.profile-form .vehicle-option {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 11px;
+  min-height: 78px;
+  padding: 13px;
+  border: 1px solid #46483f;
+  border-radius: 12px;
+  background: #20211d;
+  cursor: pointer;
+}
+.profile-form .vehicle-option:hover {
+  border-color: #727568;
+}
+.profile-form .vehicle-option.selected {
+  border-color: var(--lime);
+  background: #292d20;
+}
+.profile-form .vehicle-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--lime);
+}
+.vehicle-option > span {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+.vehicle-option > span strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.vehicle-option > span small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vehicle-option > b {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: #34362f;
+  color: #bdbab2;
+  font-size: 15px;
+}
+.vehicle-option.selected > b {
+  background: var(--lime);
+  color: var(--black);
+}
 .profile-form small {
   color: var(--muted);
   font-weight: 400;
@@ -909,19 +1011,10 @@
 }
 @media (max-width: 1240px) {
   .calculator-shell-map {
-    grid-template-columns: 1fr;
     max-width: 1100px;
   }
-  .calculator-shell-map > aside {
-    position: static;
-  }
   .calculator-shell-map > aside h1 {
-    max-width: 760px;
-  }
-  .calculator-shell-map .steps {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: 600px;
+    max-width: 900px;
   }
 }
 @media (max-width: 940px) {
@@ -944,7 +1037,7 @@
     grid-template-columns: 1fr;
   }
   .mobility-story > small,
-  .mobility-story > .map-use-button {
+  .mobility-story > .estimate-synced-message {
     grid-column: 1;
   }
 }
@@ -958,7 +1051,7 @@
     padding: 38px 14px 72px;
   }
   .calculator-shell-map .steps {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .step-label {
     display: none;
@@ -1006,6 +1099,10 @@
   .journey-builder,
   .field-grid {
     grid-template-columns: 1fr;
+  }
+  .vehicle-options {
+    grid-template-columns: 1fr;
+    max-height: none;
   }
   .journey-options {
     display: grid;

@@ -34,11 +34,13 @@ type Journey = {
   id: string;
   originId: string;
   destinationId: string;
-  frequencyPerWeek: number;
-  weeksPerYear: number;
+  frequencyCount: number;
+  frequencyPeriod: FrequencyPeriod;
   roundTrip: boolean;
   byCar: boolean;
 };
+
+type FrequencyPeriod = 'weekly' | 'monthly' | 'semiannual' | 'annual';
 
 type DistanceSource = 'route' | 'approximate';
 
@@ -68,7 +70,6 @@ type MobilityMapProps = {
   ownershipYears: number;
   onEstimateChange: (estimate: MobilityEstimate) => void;
   onPlaceCountChange: (count: number) => void;
-  onUseEstimate: (annualKilometers: number) => void;
 };
 
 type OsrmResponse = {
@@ -89,6 +90,31 @@ const categories: { id: PlaceCategory; label: string; shortLabel: string }[] = [
 ];
 
 const routeColors = ['#d9ff65', '#ffb86b', '#79dfff', '#f39ac7', '#c8a7ff'];
+const frequencyPeriods: Record<
+  FrequencyPeriod,
+  { label: string; occurrenceLabel: string; periodsPerYear: number }
+> = {
+  weekly: {
+    label: 'Semanal',
+    occurrenceLabel: 'semana',
+    periodsPerYear: 52,
+  },
+  monthly: {
+    label: 'Mensual',
+    occurrenceLabel: 'mes',
+    periodsPerYear: 12,
+  },
+  semiannual: {
+    label: 'Semestral',
+    occurrenceLabel: 'semestre',
+    periodsPerYear: 2,
+  },
+  annual: {
+    label: 'Anual',
+    occurrenceLabel: 'año',
+    periodsPerYear: 1,
+  },
+};
 
 function categoryLabel(category: PlaceCategory) {
   return (
@@ -120,7 +146,6 @@ export function MobilityMap({
   ownershipYears,
   onEstimateChange,
   onPlaceCountChange,
-  onUseEstimate,
 }: MobilityMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -139,15 +164,16 @@ export function MobilityMap({
   const [category, setCategory] = useState<PlaceCategory>('home');
   const [searchResults, setSearchResults] = useState<SearchCandidate[]>([]);
   const [searchStatus, setSearchStatus] = useState(
-    'Busca un lugar para comenzar a dibujar tu semana.',
+    'Busca un lugar para comenzar a dibujar tu rutina.',
   );
   const [searching, setSearching] = useState(false);
   const [manualFallbackAvailable, setManualFallbackAvailable] = useState(false);
   const [manualPlacementActive, setManualPlacementActive] = useState(false);
   const [originId, setOriginId] = useState('');
   const [destinationId, setDestinationId] = useState('');
-  const [frequencyPerWeek, setFrequencyPerWeek] = useState(5);
-  const [weeksPerYear, setWeeksPerYear] = useState(48);
+  const [frequencyCount, setFrequencyCount] = useState(5);
+  const [frequencyPeriod, setFrequencyPeriod] =
+    useState<FrequencyPeriod>('weekly');
   const [roundTrip, setRoundTrip] = useState(true);
   const [byCar, setByCar] = useState(true);
   const [journeyMessage, setJourneyMessage] = useState('');
@@ -258,7 +284,7 @@ export function MobilityMap({
     setManualFallbackAvailable(false);
     setManualPlacementActive(false);
     manualPlacementRef.current = null;
-    setSearchStatus('Busca un lugar para comenzar a dibujar tu semana.');
+    setSearchStatus('Busca un lugar para comenzar a dibujar tu rutina.');
     setJourneyMessage('');
     onEstimateChange({
       annualKilometers: null,
@@ -424,7 +450,9 @@ export function MobilityMap({
         };
       }
       const multiplier =
-        journey.frequencyPerWeek * journey.weeksPerYear * (journey.roundTrip ? 2 : 1);
+        journey.frequencyCount *
+        frequencyPeriods[journey.frequencyPeriod].periodsPerYear *
+        (journey.roundTrip ? 2 : 1);
       annualKilometers += route.distanceKilometers * multiplier;
       if (route.durationMinutes === null) {
         hasMissingDuration = true;
@@ -574,7 +602,7 @@ export function MobilityMap({
         journey.roundTrip === roundTrip,
     );
     if (duplicate) {
-      setJourneyMessage('Ese trayecto ya está en tu semana.');
+      setJourneyMessage('Ese trayecto ya forma parte de tu rutina.');
       return;
     }
     setJourneys((current) => [
@@ -583,8 +611,8 @@ export function MobilityMap({
         id: createId('journey'),
         originId,
         destinationId,
-        frequencyPerWeek,
-        weeksPerYear,
+        frequencyCount,
+        frequencyPeriod,
         roundTrip,
         byCar,
       },
@@ -617,7 +645,7 @@ export function MobilityMap({
           </h2>
           <p>
             Busca tus lugares reales, conecta cada trayecto y dinos con qué frecuencia
-            ocurre. El mapa traduce esa semana en una decisión anual.
+            ocurre. El mapa traduce esa rutina en una decisión anual.
           </p>
         </div>
         <span className="point-counter">{places.length}/8 lugares</span>
@@ -767,7 +795,7 @@ export function MobilityMap({
         <section className="journey-studio" aria-labelledby="journey-studio-title">
           <div className="journey-heading">
             <div>
-              <span className="panel-step">2 · Construye una semana real</span>
+              <span className="panel-step">2 · Construye tu frecuencia real</span>
               <h3 id="journey-studio-title">Conecta tus lugares</h3>
             </div>
             <p>Cada conexión tiene su propia frecuencia. Así evitamos inflar tus km.</p>
@@ -802,27 +830,39 @@ export function MobilityMap({
               </select>
             </label>
             <label>
-              Veces por semana
-              <input
-                type="number"
-                min="0.5"
-                max="21"
-                step="0.5"
-                value={frequencyPerWeek}
+              Frecuencia
+              <select
+                value={frequencyPeriod}
                 onChange={(event) =>
-                  setFrequencyPerWeek(Number(event.target.value) || 0.5)
+                  setFrequencyPeriod(event.target.value as FrequencyPeriod)
                 }
-              />
+              >
+                {Object.entries(frequencyPeriods).map(([value, option]) => (
+                  <option value={value} key={value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
-              Semanas al año
+              Veces por {frequencyPeriods[frequencyPeriod].occurrenceLabel}
               <input
                 type="number"
                 min="1"
-                max="52"
-                value={weeksPerYear}
-                onChange={(event) => setWeeksPerYear(Number(event.target.value) || 1)}
+                max="99"
+                step="1"
+                value={frequencyCount}
+                onChange={(event) =>
+                  setFrequencyCount(
+                    Math.min(99, Math.max(1, Number(event.target.value) || 1)),
+                  )
+                }
               />
+              <small>
+                {frequencyCount *
+                  frequencyPeriods[frequencyPeriod].periodsPerYear}{' '}
+                veces al año
+              </small>
             </label>
           </div>
           <div className="journey-options">
@@ -870,7 +910,14 @@ export function MobilityMap({
                       </strong>
                       <small>
                         {journey.roundTrip ? 'Ida y regreso' : 'Solo ida'} ·{' '}
-                        {journey.frequencyPerWeek}×/sem · {journey.weeksPerYear} sem/año
+                        {journey.frequencyCount}×/
+                        {
+                          frequencyPeriods[journey.frequencyPeriod].occurrenceLabel
+                        }{' '}
+                        ·{' '}
+                        {journey.frequencyCount *
+                          frequencyPeriods[journey.frequencyPeriod].periodsPerYear}
+                        ×/año
                         {!journey.byCar ? ' · excluido del cálculo del vehículo' : ''}
                       </small>
                     </span>
@@ -906,7 +953,7 @@ export function MobilityMap({
           <h3 id="mobility-story-title">La huella de tu rutina</h3>
           <p>
             {estimate.annualKilometers === null
-              ? 'Agrega al menos un trayecto para convertir tu semana en una estimación anual.'
+              ? 'Agrega al menos un trayecto para convertir tu rutina en una estimación anual.'
               : `Solo esta rutina podría sumar ${lifetimeKilometers?.toLocaleString(
                   'es-CO',
                 )} km durante los ${ownershipYears} años que planeas conservar el vehículo.`}
@@ -933,14 +980,10 @@ export function MobilityMap({
           </article>
         </div>
         {estimate.annualKilometers !== null ? (
-          <button
-            className="map-use-button"
-            type="button"
-            onClick={() => onUseEstimate(estimate.annualKilometers ?? 0)}
-          >
-            Usar {estimate.annualKilometers.toLocaleString('es-CO')} km/año en mi perfil{' '}
-            <span aria-hidden="true">→</span>
-          </button>
+          <p className="estimate-synced-message">
+            Este valor ya se cargó automáticamente en “Kilómetros al año”. Puedes
+            editarlo antes de continuar.
+          </p>
         ) : null}
         {estimate.source === 'approximate' ? (
           <small>

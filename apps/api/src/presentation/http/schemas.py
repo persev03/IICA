@@ -179,7 +179,7 @@ class EvaluationRequest(BaseModel):
     household_size: int = Field(default=1, ge=1, le=20)
     frequent_road_trips: bool = False
     charging_access: str = "none"
-    vehicle_ids: list[UUID] = Field(min_length=1, max_length=2)
+    vehicle_ids: list[UUID] = Field(min_length=1, max_length=100)
 
 
 class EvaluationInfluenceResponse(BaseModel):

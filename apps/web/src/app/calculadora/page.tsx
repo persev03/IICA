@@ -120,7 +120,11 @@ export default function CalculatorPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedCity, setSelectedCity] = useState('medellin');
   const [annualKilometers, setAnnualKilometers] = useState('');
+  const [kilometersSource, setKilometersSource] = useState<
+    'empty' | 'map' | 'manual'
+  >('empty');
   const [ownershipYears, setOwnershipYears] = useState(5);
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
   const [mapPlaceCount, setMapPlaceCount] = useState(0);
   const [mobilityEstimate, setMobilityEstimate] = useState<{
     annualKilometers: number | null;
@@ -144,6 +148,19 @@ export default function CalculatorPage() {
     (count: number) => setMapPlaceCount(count),
     [],
   );
+
+  useEffect(() => {
+    if (mobilityEstimate.annualKilometers === null) {
+      setKilometersSource((current) => {
+        if (current !== 'map') return current;
+        setAnnualKilometers('');
+        return 'empty';
+      });
+      return;
+    }
+    setAnnualKilometers(String(mobilityEstimate.annualKilometers));
+    setKilometersSource('map');
+  }, [mobilityEstimate.annualKilometers]);
   const displayCities = cities.length ? cities : fallbackCities;
   const selectedCityName =
     displayCities.find((city) => city.code === selectedCity)?.name ??
@@ -249,12 +266,9 @@ export default function CalculatorPage() {
     event.preventDefault();
     if (!profile) return;
 
-    const data = new FormData(event.currentTarget);
-    const selectedVehicles = [data.get('vehicle-one'), data.get('vehicle-two')]
-      .map(String)
-      .filter(Boolean);
-    if (new Set(selectedVehicles).size !== selectedVehicles.length) {
-      setEvaluationError('Selecciona dos versiones diferentes para compararlas.');
+    const selectedVehicles = selectedVehicleIds;
+    if (!selectedVehicles.length) {
+      setEvaluationError('Selecciona al menos una versión para calcular el IICA.');
       return;
     }
 
@@ -462,9 +476,6 @@ export default function CalculatorPage() {
                   ownershipYears={ownershipYears}
                   onEstimateChange={updateMobilityEstimate}
                   onPlaceCountChange={updateMapPlaceCount}
-                  onUseEstimate={(kilometers) =>
-                    setAnnualKilometers(String(kilometers))
-                  }
                 />
               ) : null}
               {catalogError ? <p className="form-error">{catalogError}</p> : null}
@@ -495,16 +506,21 @@ export default function CalculatorPage() {
                     inputMode="numeric"
                     placeholder="Ej. 12.000"
                     value={annualKilometers}
-                    onChange={(event) =>
-                      setAnnualKilometers(event.target.value.replace(/\D/g, ''))
-                    }
+                    onChange={(event) => {
+                      setAnnualKilometers(event.target.value.replace(/\D/g, ''));
+                      setKilometersSource('manual');
+                    }}
                     required
                   />
                   <small>
-                    {mobilityEstimate.annualKilometers !== null &&
-                    annualKilometers === String(mobilityEstimate.annualKilometers)
-                      ? 'Estimación tomada de tu mapa de vida.'
-                      : 'Puedes escribirlos manualmente o usar la estimación del mapa.'}
+                    {kilometersSource === 'map'
+                      ? 'Cálculo automático basado en los lugares, trayectos y frecuencias que proporcionaste arriba. Puedes editarlo.'
+                      : kilometersSource === 'manual' &&
+                          mobilityEstimate.annualKilometers !== null
+                        ? `Valor editado por ti. El mapa calculó ${mobilityEstimate.annualKilometers.toLocaleString(
+                            'es-CO',
+                          )} km/año con los datos proporcionados arriba.`
+                        : 'Se calculará automáticamente con tu mapa de vida; también puedes escribir otro valor.'}
                   </small>
                 </label>
                 <label>
@@ -559,37 +575,49 @@ export default function CalculatorPage() {
               <p className="form-kicker">Paso 2 de 3</p>
               <h2>¿Qué versiones quieres comparar?</h2>
               <p className="form-copy">
-                Solo aparecen versiones con precio vigente y evidencia verificable. Si
-                una versión no tiene una prueba NCAP equivalente, IICA omite ese
-                componente y reajusta el cálculo.
+                Elige una o todas las versiones que te interesen. Solo aparecen
+                vehículos con precio vigente y evidencia verificable.
               </p>
               {evaluationError ? (
                 <p className="form-error" role="alert">
                   {evaluationError}
                 </p>
               ) : null}
-              <label>
-                Primer vehículo
-                <select name="vehicle-one" defaultValue="" required>
-                  <option value="">Selecciona una versión</option>
-                  {vehicles.map((vehicle) => (
-                    <option value={vehicle.id} key={vehicle.id}>
-                      {vehicleLabel(vehicle)} · {formatPrice(vehicle)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Segundo vehículo <small>(opcional)</small>
-                <select name="vehicle-two" defaultValue="">
-                  <option value="">Sin segundo vehículo</option>
-                  {vehicles.map((vehicle) => (
-                    <option value={vehicle.id} key={vehicle.id}>
-                      {vehicleLabel(vehicle)} · {formatPrice(vehicle)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <fieldset className="vehicle-picker">
+                <legend>
+                  Vehículos seleccionados: <strong>{selectedVehicleIds.length}</strong>
+                </legend>
+                <div className="vehicle-options">
+                  {vehicles.map((vehicle) => {
+                    const selected = selectedVehicleIds.includes(vehicle.id);
+                    return (
+                      <label
+                        className={`vehicle-option ${selected ? 'selected' : ''}`}
+                        key={vehicle.id}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() =>
+                            setSelectedVehicleIds((current) =>
+                              selected
+                                ? current.filter((id) => id !== vehicle.id)
+                                : [...current, vehicle.id],
+                            )
+                          }
+                        />
+                        <span>
+                          <strong>{vehicleLabel(vehicle)}</strong>
+                          <small>
+                            {formatPrice(vehicle)} · {vehicle.powertrain}
+                          </small>
+                        </span>
+                        <b aria-hidden="true">{selected ? '✓' : '+'}</b>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
               <button
                 className="button button-primary"
                 type="submit"
