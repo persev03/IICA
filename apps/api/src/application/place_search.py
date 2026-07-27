@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import re
+import unicodedata
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -14,8 +16,7 @@ import httpx
 
 DEFAULT_GEOCODER_URL = "https://nominatim.openstreetmap.org/search"
 DEFAULT_USER_AGENT = (
-    "IICA/0.1 "
-    "(https://github.com/persev03/IICA; https://persev03.github.io/IICA/)"
+    "IICA/0.1 (https://github.com/persev03/IICA; https://persev03.github.io/IICA/)"
 )
 DEFAULT_REFERER = "https://persev03.github.io/IICA/"
 
@@ -42,6 +43,43 @@ class _CacheEntry:
     candidates: tuple[PlaceCandidate, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class _KnownPlace:
+    aliases: tuple[str, ...]
+    cities: tuple[str, ...]
+    candidate: PlaceCandidate
+
+
+# Dirección: registro público de proyectos de vivienda de la Alcaldía de Medellín.
+# Coordenadas: enlace "Llega con Waze" publicado por el desarrollador del proyecto.
+KNOWN_PLACES = (
+    _KnownPlace(
+        aliases=("sky 72", "sky72", "edificio sky 72", "apartamentos sky 72"),
+        cities=("medellin",),
+        candidate=PlaceCandidate(
+            id="iica-known-sky-72-medellin",
+            name="Sky 72",
+            display_name=(
+                "Sky 72, Carrera 28 #29-82, La Asomadera 3, "
+                "Medellín, Antioquia, Colombia"
+            ),
+            latitude=6.226866,
+            longitude=-75.557377,
+            category="residential",
+        ),
+    ),
+)
+
+
+def _search_key(value: str) -> str:
+    without_accents = "".join(
+        character
+        for character in unicodedata.normalize("NFKD", value)
+        if not unicodedata.combining(character)
+    )
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", without_accents.casefold()).split())
+
+
 class NominatimPlaceSearch:
     """Cliente Nominatim con cache y un máximo global de una consulta por segundo."""
 
@@ -57,15 +95,9 @@ class NominatimPlaceSearch:
         clock: Callable[[], float] = monotonic,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
-        self._endpoint = (
-            endpoint
-            or getenv("IICA_GEOCODER_URL")
-            or DEFAULT_GEOCODER_URL
-        )
+        self._endpoint = endpoint or getenv("IICA_GEOCODER_URL") or DEFAULT_GEOCODER_URL
         self._user_agent = (
-            user_agent
-            or getenv("IICA_GEOCODER_USER_AGENT")
-            or DEFAULT_USER_AGENT
+            user_agent or getenv("IICA_GEOCODER_USER_AGENT") or DEFAULT_USER_AGENT
         )
         self._cache_ttl_seconds = cache_ttl_seconds
         self._cache_max_entries = cache_max_entries
@@ -77,13 +109,18 @@ class NominatimPlaceSearch:
         self._upstream_lock = asyncio.Lock()
         self._last_upstream_started: float | None = None
 
-    async def search(
-        self, *, query: str, city_name: str
-    ) -> list[PlaceCandidate]:
+    async def search(self, *, query: str, city_name: str) -> list[PlaceCandidate]:
         """Busca lugares solo a partir de una solicitud explícita del usuario."""
 
         normalized_query = " ".join(query.split())
         normalized_city = " ".join(city_name.split())
+        known_candidates = self._known_candidates(
+            query=normalized_query,
+            city_name=normalized_city,
+        )
+        if known_candidates:
+            return known_candidates
+
         cache_key = f"{normalized_query.casefold()}::{normalized_city.casefold()}"
         cached = self._cached(cache_key)
         if cached is not None:
@@ -102,6 +139,24 @@ class NominatimPlaceSearch:
             self._remember(cache_key, candidates)
             return list(candidates)
 
+    @staticmethod
+    def _known_candidates(*, query: str, city_name: str) -> list[PlaceCandidate]:
+        query_key = _search_key(query)
+        compact_query = query_key.replace(" ", "")
+        padded_query = f" {query_key} "
+        city_key = _search_key(city_name)
+        candidates: list[PlaceCandidate] = []
+        for place in KNOWN_PLACES:
+            if city_key not in place.cities:
+                continue
+            if any(
+                f" {_search_key(alias)} " in padded_query
+                or _search_key(alias).replace(" ", "") == compact_query
+                for alias in place.aliases
+            ):
+                candidates.append(place.candidate)
+        return candidates
+
     def _cached(self, cache_key: str) -> tuple[PlaceCandidate, ...] | None:
         entry = self._cache.get(cache_key)
         if entry is None:
@@ -112,9 +167,7 @@ class NominatimPlaceSearch:
         self._cache.move_to_end(cache_key)
         return entry.candidates
 
-    def _remember(
-        self, cache_key: str, candidates: list[PlaceCandidate]
-    ) -> None:
+    def _remember(self, cache_key: str, candidates: list[PlaceCandidate]) -> None:
         self._cache[cache_key] = _CacheEntry(
             expires_at=self._clock() + self._cache_ttl_seconds,
             candidates=tuple(candidates),

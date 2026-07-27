@@ -1,6 +1,12 @@
 'use client';
 
-import type { LayerGroup, Map as LeafletMap, Marker, Polyline } from 'leaflet';
+import type {
+  LayerGroup,
+  LeafletMouseEvent,
+  Map as LeafletMap,
+  Marker,
+  Polyline,
+} from 'leaflet';
 import type { KeyboardEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -47,6 +53,11 @@ type MobilityEstimate = {
   annualKilometers: number | null;
   annualMinutes: number | null;
   source: DistanceSource | null;
+};
+
+type ManualPlacement = {
+  name: string;
+  category: PlaceCategory;
 };
 
 type MobilityMapProps = {
@@ -118,6 +129,7 @@ export function MobilityMap({
   const leafletRef = useRef<typeof import('leaflet') | null>(null);
   const routeRequestRef = useRef<AbortController | null>(null);
   const searchRequestRef = useRef<AbortController | null>(null);
+  const manualPlacementRef = useRef<ManualPlacement | null>(null);
   const centerRef = useRef(center);
   const [mapReady, setMapReady] = useState(false);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -130,6 +142,8 @@ export function MobilityMap({
     'Busca un lugar para comenzar a dibujar tu semana.',
   );
   const [searching, setSearching] = useState(false);
+  const [manualFallbackAvailable, setManualFallbackAvailable] = useState(false);
+  const [manualPlacementActive, setManualPlacementActive] = useState(false);
   const [originId, setOriginId] = useState('');
   const [destinationId, setDestinationId] = useState('');
   const [frequencyPerWeek, setFrequencyPerWeek] = useState(5);
@@ -176,6 +190,51 @@ export function MobilityMap({
   }, []);
 
   useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+
+    function handleManualPlacement(event: LeafletMouseEvent) {
+      const pending = manualPlacementRef.current;
+      if (!pending) return;
+      if (places.length >= 8) {
+        manualPlacementRef.current = null;
+        setManualPlacementActive(false);
+        setSearchStatus(
+          'Llegaste al máximo recomendado de 8 lugares. Elimina uno para continuar.',
+        );
+        return;
+      }
+
+      const place: Place = {
+        id: createId('manual-place'),
+        name: pending.name,
+        address: `Ubicación ajustada manualmente en ${cityName}`,
+        category: pending.category,
+        lat: event.latlng.lat,
+        lng: event.latlng.lng,
+      };
+      const nextPlaces = [...places, place];
+      setPlaces(nextPlaces);
+      setOriginId((current) => current || nextPlaces[0]?.id || '');
+      setDestinationId(place.id);
+      setCategory(nextPlaces.length === 1 ? 'work' : 'frequent');
+      setQuery('');
+      setSearchResults([]);
+      setManualFallbackAvailable(false);
+      setManualPlacementActive(false);
+      manualPlacementRef.current = null;
+      setSearchStatus(
+        `${place.name} agregado en el punto exacto que marcaste. Puedes arrastrar el pin para afinarlo.`,
+      );
+    }
+
+    map.on('click', handleManualPlacement);
+    return () => {
+      map.off('click', handleManualPlacement);
+    };
+  }, [cityName, mapReady, places]);
+
+  useEffect(() => {
     if (!containerRef.current || !mapRef.current) return;
     const map = mapRef.current;
     const observer = new ResizeObserver(() => map.invalidateSize(false));
@@ -196,6 +255,9 @@ export function MobilityMap({
     setQuery('');
     setCategory('home');
     setSearching(false);
+    setManualFallbackAvailable(false);
+    setManualPlacementActive(false);
+    manualPlacementRef.current = null;
     setSearchStatus('Busca un lugar para comenzar a dibujar tu semana.');
     setJourneyMessage('');
     onEstimateChange({
@@ -395,6 +457,7 @@ export function MobilityMap({
     searchRequestRef.current = controller;
     setSearching(true);
     setSearchResults([]);
+    setManualFallbackAvailable(false);
     setSearchStatus(`Buscando “${normalizedQuery}” en ${cityName}…`);
     try {
       const response = await fetch(`${apiUrl}/v1/places/search`, {
@@ -409,6 +472,7 @@ export function MobilityMap({
       if (!response.ok) throw new Error('search-unavailable');
       const candidates = (await response.json()) as SearchCandidate[];
       setSearchResults(candidates);
+      setManualFallbackAvailable(true);
       setSearchStatus(
         candidates.length
           ? 'Elige el resultado correcto; no seleccionaremos uno por ti.'
@@ -419,6 +483,7 @@ export function MobilityMap({
       setSearchStatus(
         'No pudimos consultar el buscador. Espera un momento e intenta de nuevo.',
       );
+      setManualFallbackAvailable(true);
     } finally {
       if (!controller.signal.aborted) setSearching(false);
     }
@@ -454,12 +519,36 @@ export function MobilityMap({
     setPlaces(nextPlaces);
     setSearchResults([]);
     setQuery('');
+    setManualFallbackAvailable(false);
+    setManualPlacementActive(false);
+    manualPlacementRef.current = null;
     setCategory(nextPlaces.length === 1 ? 'work' : 'frequent');
     setOriginId((current) => current || nextPlaces[0]?.id || '');
     setDestinationId(place.id);
     setSearchStatus(
       `${place.name} agregado como ${categoryLabel(category)}. Puedes arrastrar el pin para afinarlo.`,
     );
+  }
+
+  function startManualPlacement() {
+    const name = query.trim();
+    if (name.length < 3) return;
+    manualPlacementRef.current = { name, category };
+    setManualPlacementActive(true);
+    setSearchResults([]);
+    setSearchStatus(
+      `Haz clic sobre la ubicación exacta de “${name}” en el mapa. Después podrás arrastrar el pin.`,
+    );
+    containerRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }
+
+  function cancelManualPlacement() {
+    manualPlacementRef.current = null;
+    setManualPlacementActive(false);
+    setSearchStatus('Ubicación manual cancelada. Puedes intentar otra búsqueda.');
   }
 
   function removePlace(placeId: string) {
@@ -537,13 +626,21 @@ export function MobilityMap({
       <div className="map-studio">
         <div className="map-stage">
           <div
-            className="map-canvas"
+            className={`map-canvas ${
+              manualPlacementActive ? 'map-canvas--placing' : ''
+            }`}
             ref={containerRef}
             aria-label={`Mapa interactivo de ${cityName} con tus lugares y trayectos`}
           />
           <div className="map-stage-note">
-            <strong>{cityName}</strong>
-            <span>Arrastra cualquier pin para afinar su ubicación.</span>
+            <strong>
+              {manualPlacementActive ? 'Marca el punto exacto' : cityName}
+            </strong>
+            <span>
+              {manualPlacementActive
+                ? 'Haz clic en el edificio; el mapa colocará un pin editable.'
+                : 'Arrastra cualquier pin para afinar su ubicación.'}
+            </span>
           </div>
         </div>
 
@@ -580,7 +677,11 @@ export function MobilityMap({
                   maxLength={160}
                   autoComplete="off"
                   placeholder={`Ej. Parque del Poblado, ${cityName}`}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setManualFallbackAvailable(false);
+                    if (manualPlacementRef.current) cancelManualPlacement();
+                  }}
                   onKeyDown={handleSearchKeyDown}
                 />
                 <button
@@ -607,6 +708,24 @@ export function MobilityMap({
                   </li>
                 ))}
               </ul>
+            ) : null}
+            {manualPlacementActive ? (
+              <div className="manual-placement-prompt">
+                <strong>El mapa está listo para recibir tu punto.</strong>
+                <span>Haz clic en el edificio o cancela para volver a buscar.</span>
+                <button type="button" onClick={cancelManualPlacement}>
+                  Cancelar ubicación manual
+                </button>
+              </div>
+            ) : manualFallbackAvailable ? (
+              <button
+                className="manual-place-button"
+                type="button"
+                onClick={startManualPlacement}
+              >
+                <strong>¿No aparece “{query.trim()}”?</strong>
+                <span>Ubícalo con un clic exacto sobre el mapa →</span>
+              </button>
             ) : null}
           </div>
 

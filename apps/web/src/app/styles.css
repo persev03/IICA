@@ -222,6 +222,11 @@
   border-radius: 17px;
   background: #292a25;
 }
+.map-canvas--placing {
+  border-color: var(--lime);
+  cursor: crosshair;
+  box-shadow: 0 0 0 3px rgb(217 255 101 / 18%);
+}
 .map-stage-note {
   position: absolute;
   z-index: 500;
@@ -417,6 +422,58 @@
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+.profile-form .manual-place-button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 58px;
+  justify-self: stretch;
+  padding: 11px;
+  border: 1px dashed #727765;
+  border-radius: 10px;
+  background: #25281f;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+.profile-form .manual-place-button:hover {
+  border-color: var(--lime);
+}
+.manual-place-button strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+.manual-place-button span {
+  color: var(--lime);
+  font-size: 10px;
+}
+.manual-placement-prompt {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--lime);
+  border-radius: 10px;
+  background: #303423;
+}
+.manual-placement-prompt strong {
+  color: var(--lime);
+  font-size: 12px;
+}
+.manual-placement-prompt span {
+  color: #d8d5cd;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.profile-form .manual-placement-prompt button {
+  margin-top: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d8d5cd;
+  font: inherit;
+  font-size: 10px;
+  text-decoration: underline;
 }
 .places-list {
   display: grid;

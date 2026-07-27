@@ -17,6 +17,30 @@ from presentation.http.routers.places import get_place_search
 
 
 class NominatimPlaceSearchTests(IsolatedAsyncioTestCase):
+    async def test_finds_a_verified_local_place_missing_from_osm(self) -> None:
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(200, json=[])
+
+        search = NominatimPlaceSearch(
+            endpoint="https://geocoder.example/search",
+            transport=httpx.MockTransport(handler),
+        )
+
+        candidates = await search.search(
+            query="Edificio SKY72",
+            city_name="Medellín",
+        )
+
+        self.assertEqual(len(requests), 0)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0].name, "Sky 72")
+        self.assertEqual(candidates[0].latitude, 6.226866)
+        self.assertEqual(candidates[0].longitude, -75.557377)
+        self.assertIn("Carrera 28 #29-82", candidates[0].display_name)
+
     async def test_identifies_iica_and_caches_a_manual_search(self) -> None:
         requests: list[httpx.Request] = []
 
@@ -53,8 +77,13 @@ class NominatimPlaceSearchTests(IsolatedAsyncioTestCase):
 
         self.assertEqual(first, second)
         self.assertEqual(len(requests), 1)
-        self.assertEqual(requests[0].headers["user-agent"], "IICA-test/1.0 (https://example.com/contact)")
-        self.assertEqual(requests[0].headers["referer"], "https://persev03.github.io/IICA/")
+        self.assertEqual(
+            requests[0].headers["user-agent"],
+            "IICA-test/1.0 (https://example.com/contact)",
+        )
+        self.assertEqual(
+            requests[0].headers["referer"], "https://persev03.github.io/IICA/"
+        )
         self.assertEqual(requests[0].url.params["format"], "jsonv2")
         self.assertEqual(requests[0].url.params["countrycodes"], "co")
         self.assertEqual(requests[0].url.params["limit"], "5")
@@ -112,9 +141,7 @@ class NominatimPlaceSearchTests(IsolatedAsyncioTestCase):
 
 
 class _SuccessfulPlaceSearch:
-    async def search(
-        self, *, query: str, city_name: str
-    ) -> list[PlaceCandidate]:
+    async def search(self, *, query: str, city_name: str) -> list[PlaceCandidate]:
         return [
             PlaceCandidate(
                 id="456",
@@ -128,9 +155,7 @@ class _SuccessfulPlaceSearch:
 
 
 class _UnavailablePlaceSearch:
-    async def search(
-        self, *, query: str, city_name: str
-    ) -> list[PlaceCandidate]:
+    async def search(self, *, query: str, city_name: str) -> list[PlaceCandidate]:
         raise PlaceSearchUnavailable("Proveedor temporalmente no disponible.")
 
 
