@@ -235,6 +235,16 @@ class DeterministicEngineTests(TestCase):
                 4,
                 False,
                 ChargingAccess.NONE,
+                (
+                    PreferenceCriterion.SAFETY,
+                    PreferenceCriterion.AFFORDABILITY,
+                    PreferenceCriterion.FUEL_EFFICIENCY,
+                    PreferenceCriterion.INTERIOR_SPACE,
+                    PreferenceCriterion.TECHNOLOGY,
+                    PreferenceCriterion.RELIABILITY,
+                    PreferenceCriterion.RESALE,
+                    PreferenceCriterion.MOBILITY_EXEMPTION,
+                ),
             ),
             vehicle=VehicleProfile(
                 "v3",
@@ -270,4 +280,8 @@ class DeterministicEngineTests(TestCase):
         self.assertNotIn(
             "La seguridad de esta versión es relevante para tu decisión.",
             result.explanation.strengths,
+        )
+        self.assertIn(
+            "no hay evidencia verificable suficiente",
+            result.explanation.priority_insights[0],
         )

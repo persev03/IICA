@@ -350,6 +350,10 @@ class DeterministicIicaEngine:
                 component for component in components if component[4] == criterion
             ]
             if not candidates:
+                insights.append(
+                    f"Prioridad #{rank}: no hay evidencia verificable suficiente "
+                    "para puntuar este criterio; IICA no asignó un valor supuesto."
+                )
                 continue
             _, value, _, summary, _ = max(candidates, key=lambda item: item[2])
             alignment = (
