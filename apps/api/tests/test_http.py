@@ -302,8 +302,12 @@ class EvaluationIntegrationTests(TestCase):
 
     def test_ai_explanation_uses_deterministic_evaluation_as_context(self) -> None:
         with patch(
-            "application.ai_assistant._call_ollama_chat",
-            return_value="La mejor opción mantiene una compra sólida según el score.",
+            "application.ai_assistant._call_best_available_chat",
+            return_value=(
+                "ollama",
+                "qwen2.5:7b-instruct",
+                "La mejor opción mantiene una compra sólida según el score.",
+            ),
         ):
             response = self.client.post(
                 "/v1/ai/evaluations/explain",
@@ -333,8 +337,12 @@ class EvaluationIntegrationTests(TestCase):
     def test_ai_explanation_creates_audit_record(self) -> None:
         app.dependency_overrides[optional_user_id] = lambda: "user-verified"
         with patch(
-            "application.ai_assistant._call_ollama_chat",
-            return_value="Resumen asistivo con evidencia del cálculo.",
+            "application.ai_assistant._call_best_available_chat",
+            return_value=(
+                "ollama",
+                "qwen2.5:7b-instruct",
+                "Resumen asistivo con evidencia del cálculo.",
+            ),
         ):
             response = self.client.post(
                 "/v1/ai/evaluations/explain",

@@ -47,5 +47,16 @@ Variables opcionales:
 - `IICA_OLLAMA_TIMEOUT_SECONDS` (por defecto `25`)
 - `IICA_OLLAMA_TEMPERATURE` (por defecto `0.2`)
 
+Fallback en nube (gratis con cuenta Hugging Face):
+
+- `IICA_HF_API_KEY` (token personal de Hugging Face)
+- `IICA_HF_MODEL` (por defecto `Qwen/Qwen2.5-7B-Instruct`)
+- `IICA_HF_CHAT_URL` (por defecto `https://router.huggingface.co/v1/chat/completions`)
+- `IICA_HF_TIMEOUT_SECONDS` (por defecto `25`)
+- `IICA_HF_TEMPERATURE` (por defecto `0.2`)
+
+La API intenta Ollama primero; si no responde, usa Hugging Face cuando
+`IICA_HF_API_KEY` está configurado.
+
 Cada respuesta queda auditada en la tabla `ai_assistant_records` con prompt,
 salida, modelo y trazabilidad de usuario cuando existe sesión autenticada.

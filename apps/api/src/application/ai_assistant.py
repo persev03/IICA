@@ -28,6 +28,15 @@ class OllamaConfig:
     temperature: float
 
 
+@dataclass(frozen=True)
+class HuggingFaceConfig:
+    api_key: str
+    model: str
+    url: str
+    timeout_seconds: float
+    temperature: float
+
+
 def explain_evaluation_with_qwen(
     *,
     question: str,
@@ -57,7 +66,7 @@ def explain_evaluation_with_qwen(
         "3) No prometas cambios automáticos en el score."
     )
 
-    answer = _call_ollama_chat(
+    provider, model, answer = _call_best_available_chat(
         config=config,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
@@ -67,10 +76,10 @@ def explain_evaluation_with_qwen(
     response = AiExplainResponse(
         answer=answer,
         disclaimer=(
-            "Respuesta asistiva generada por IA local (Qwen). "
+            "Respuesta asistiva generada por IA moderna con Qwen. "
             "No reemplaza el motor determinista ni modifica el score."
         ),
-        model=config.model,
+        model=model,
         sources=sources,
         evaluation=evaluation,
     )
@@ -80,8 +89,8 @@ def explain_evaluation_with_qwen(
             user_id=user_id,
             city_code=city_code,
             question=question,
-            llm_provider="ollama",
-            llm_model=config.model,
+            llm_provider=provider,
+            llm_model=model,
             prompt_snapshot={
                 "system": system_prompt,
                 "user": user_prompt,
@@ -136,6 +145,94 @@ def _call_ollama_chat(
             "El asistente local respondió sin contenido utilizable."
         )
     return content
+
+
+def _huggingface_config() -> HuggingFaceConfig | None:
+    api_key = getenv("IICA_HF_API_KEY", "").strip()
+    if not api_key:
+        return None
+    return HuggingFaceConfig(
+        api_key=api_key,
+        model=getenv("IICA_HF_MODEL", "Qwen/Qwen2.5-7B-Instruct"),
+        url=getenv(
+            "IICA_HF_CHAT_URL",
+            "https://router.huggingface.co/v1/chat/completions",
+        ),
+        timeout_seconds=float(getenv("IICA_HF_TIMEOUT_SECONDS", "25")),
+        temperature=float(getenv("IICA_HF_TEMPERATURE", "0.2")),
+    )
+
+
+def _call_huggingface_chat(
+    *,
+    config: HuggingFaceConfig,
+    system_prompt: str,
+    user_prompt: str,
+) -> str:
+    payload = {
+        "model": config.model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": config.temperature,
+        "max_tokens": 500,
+    }
+    headers = {
+        "Authorization": f"Bearer {config.api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        with httpx.Client(timeout=config.timeout_seconds) as client:
+            http_response = client.post(config.url, json=payload, headers=headers)
+            http_response.raise_for_status()
+    except httpx.HTTPError as error:
+        raise AssistantUnavailableError(
+            "No fue posible contactar Hugging Face para el fallback de Qwen."
+        ) from error
+
+    data = http_response.json()
+    choices = data.get("choices", [])
+    if not isinstance(choices, list) or not choices:
+        raise AssistantUnavailableError(
+            "Hugging Face respondió sin opciones de contenido."
+        )
+    message = choices[0].get("message", {})
+    content = str(message.get("content", "")).strip()
+    if not content:
+        raise AssistantUnavailableError(
+            "Hugging Face respondió sin contenido utilizable."
+        )
+    return content
+
+
+def _call_best_available_chat(
+    *,
+    config: OllamaConfig,
+    system_prompt: str,
+    user_prompt: str,
+) -> tuple[str, str, str]:
+    try:
+        content = _call_ollama_chat(
+            config=config,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+        return ("ollama", config.model, content)
+    except AssistantUnavailableError as ollama_error:
+        hf_config = _huggingface_config()
+        if hf_config is None:
+            raise AssistantUnavailableError(
+                "No fue posible contactar al asistente local de IA (Ollama). "
+                "Configura IICA_HF_API_KEY para habilitar fallback gratis en nube."
+            ) from ollama_error
+        content = _call_huggingface_chat(
+            config=hf_config,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+        return ("huggingface", hf_config.model, content)
 
 
 def _build_context(evaluation: EvaluationResponse) -> str:

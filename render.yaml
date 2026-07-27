@@ -33,6 +33,10 @@ services:
         value: "25"
       - key: IICA_OLLAMA_TEMPERATURE
         value: "0.2"
+      - key: IICA_HF_API_KEY
+        sync: false
+      - key: IICA_HF_MODEL
+        value: Qwen/Qwen2.5-7B-Instruct
 
   - type: web
     name: iica-admin

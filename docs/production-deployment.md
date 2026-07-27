@@ -18,8 +18,8 @@ La funcionalidad de IA moderna (`/v1/ai/evaluations/explain`) requiere un
 endpoint de Ollama accesible desde la API (`IICA_OLLAMA_CHAT_URL`) y un modelo
 Qwen descargado (`IICA_OLLAMA_MODEL`). En planes gratuitos de Render no suele
 ser viable ejecutar Ollama en el mismo servicio por memoria/CPU, por lo que se
-recomienda usar esta función en entornos propios (Docker o VM) o un servicio de
-inferencia compatible.
+recomienda usar esta función en entornos propios (Docker o VM) o habilitar el
+fallback de Hugging Face con `IICA_HF_API_KEY`.
 
 El mismo Blueprint publica el panel estático en
 `https://iica-admin.onrender.com`. En Supabase Auth, agrega esa URL tanto como
