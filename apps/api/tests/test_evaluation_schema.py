@@ -1,5 +1,8 @@
 from uuid import uuid4
 
+import pytest
+from pydantic import ValidationError
+
 from presentation.http.schemas import EvaluationRequest
 
 
@@ -17,3 +20,17 @@ def test_evaluation_accepts_more_than_two_vehicles() -> None:
     )
 
     assert request.vehicle_ids == vehicle_ids
+
+
+def test_evaluation_rejects_duplicate_personal_priorities() -> None:
+    with pytest.raises(ValidationError):
+        EvaluationRequest(
+            city_code="medellin",
+            budget="140000000",
+            annual_kilometers=12000,
+            ownership_years=5,
+            primary_use="mixed",
+            household_size=2,
+            preference_order=["affordability"] * 8,
+            vehicle_ids=[uuid4()],
+        )

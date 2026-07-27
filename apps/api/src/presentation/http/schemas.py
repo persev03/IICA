@@ -7,7 +7,15 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, StringConstraints
+from iica_engine import PreferenceCriterion
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+)
 
 
 class CountryResponse(BaseModel):
@@ -179,13 +187,37 @@ class EvaluationRequest(BaseModel):
     household_size: int = Field(default=1, ge=1, le=20)
     frequent_road_trips: bool = False
     charging_access: str = "none"
+    preference_order: list[PreferenceCriterion] = Field(
+        default_factory=lambda: list(PreferenceCriterion),
+        min_length=len(PreferenceCriterion),
+        max_length=len(PreferenceCriterion),
+    )
     vehicle_ids: list[UUID] = Field(min_length=1, max_length=100)
+
+    @field_validator("preference_order")
+    @classmethod
+    def validate_preference_order(
+        cls, value: list[PreferenceCriterion]
+    ) -> list[PreferenceCriterion]:
+        if len(set(value)) != len(PreferenceCriterion):
+            raise ValueError("Cada prioridad debe aparecer exactamente una vez.")
+        return value
 
 
 class EvaluationInfluenceResponse(BaseModel):
     key: str
     direction: int
     summary: str
+
+
+class MobilityRuleResponse(BaseModel):
+    status: str
+    title: str
+    explanation: str
+    conditions: list[str]
+    effective_from: date
+    effective_to: date | None
+    source_url: str
 
 
 class EvaluatedVehicleResponse(BaseModel):
@@ -197,6 +229,8 @@ class EvaluatedVehicleResponse(BaseModel):
     weaknesses: list[str]
     influences: list[EvaluationInfluenceResponse]
     recommendations: list[str]
+    priority_insights: list[str] = Field(default_factory=list)
+    mobility_rule: MobilityRuleResponse | None = None
     engine_version: str
     data_version: str
 

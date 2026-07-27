@@ -10,6 +10,7 @@ from iica_engine.models import (
     MarketProfile,
     Money,
     Powertrain,
+    PreferenceCriterion,
     Score,
     VehicleProfile,
     VehicleUse,
@@ -62,8 +63,8 @@ class DeterministicEngineTests(TestCase):
         engine = DeterministicIicaEngine()
         result = engine.evaluate(evaluation_input)
 
-        self.assertEqual(result.score.value, Decimal("79.72"))
-        self.assertEqual(result.engine_version, "0.9.0")
+        self.assertEqual(result.score.value, Decimal("82.81"))
+        self.assertEqual(result.engine_version, "1.0.0")
         self.assertEqual(result.data_version, "rules-1:2026-01-01")
         self.assertEqual(len(result.explanation.influences), 3)
 
@@ -86,6 +87,90 @@ class DeterministicEngineTests(TestCase):
         )
         incentivized = engine.evaluate(incentivized_input)
         self.assertGreater(incentivized.score.value, result.score.value)
+
+    def test_personal_priority_order_changes_the_score_and_explanation(self) -> None:
+        common = {
+            "country_code": "CO",
+            "city_code": "medellin",
+            "budget": Money(Decimal(100000000), "COP"),
+            "annual_kilometers": 18000,
+            "ownership_years": 5,
+            "primary_use": VehicleUse.MIXED,
+            "household_size": 4,
+            "frequent_road_trips": False,
+            "charging_access": ChargingAccess.NONE,
+        }
+        efficiency_first = BuyerProfile(
+            **common,
+            preference_order=(
+                PreferenceCriterion.FUEL_EFFICIENCY,
+                PreferenceCriterion.TECHNOLOGY,
+                PreferenceCriterion.MOBILITY_EXEMPTION,
+                PreferenceCriterion.AFFORDABILITY,
+                PreferenceCriterion.INTERIOR_SPACE,
+                PreferenceCriterion.SAFETY,
+                PreferenceCriterion.RELIABILITY,
+                PreferenceCriterion.RESALE,
+            ),
+        )
+        affordability_first = BuyerProfile(
+            **common,
+            preference_order=(
+                PreferenceCriterion.AFFORDABILITY,
+                PreferenceCriterion.RESALE,
+                PreferenceCriterion.RELIABILITY,
+                PreferenceCriterion.INTERIOR_SPACE,
+                PreferenceCriterion.SAFETY,
+                PreferenceCriterion.MOBILITY_EXEMPTION,
+                PreferenceCriterion.TECHNOLOGY,
+                PreferenceCriterion.FUEL_EFFICIENCY,
+            ),
+        )
+        vehicle = VehicleProfile(
+            "v-priorities",
+            "Example",
+            "Hybrid",
+            "Base",
+            2026,
+            Money(Decimal(120000000), "COP"),
+            Powertrain.HYBRID,
+            5,
+            Score(Decimal(80)),
+            36,
+        )
+        environment = EnvironmentProfile(
+            "CO",
+            "medellin",
+            "rules-priorities",
+            "2026-07-27",
+            Money(Decimal(0), "COP"),
+            Money(Decimal(0), "COP"),
+            0,
+            True,
+            29,
+        )
+        market = MarketProfile("2026-07-27", Decimal(15), Score(70), Score(75))
+        engine = DeterministicIicaEngine()
+
+        efficiency_result = engine.evaluate(
+            EvaluationInput(
+                efficiency_first, vehicle, environment, market, engine.VERSION
+            )
+        )
+        affordability_result = engine.evaluate(
+            EvaluationInput(
+                affordability_first, vehicle, environment, market, engine.VERSION
+            )
+        )
+
+        self.assertNotEqual(
+            efficiency_result.score.value, affordability_result.score.value
+        )
+        self.assertTrue(
+            efficiency_result.explanation.priority_insights[0].startswith(
+                "Prioridad #1"
+            )
+        )
 
     def test_renormalizes_weights_when_market_signals_are_unavailable(self) -> None:
         evaluation_input = EvaluationInput(

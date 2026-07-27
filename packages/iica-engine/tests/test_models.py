@@ -69,7 +69,7 @@ class EvaluationInputTests(TestCase):
             annual_vehicle_tax=Money(Decimal(1000000), "COP"),
             purchase_incentive=Money(Decimal(0), "COP"),
             mobility_restriction_days_per_month=4,
-            has_electric_exemption=True,
+            has_mobility_exemption=True,
             public_charging_points=200,
         )
         market = MarketProfile(

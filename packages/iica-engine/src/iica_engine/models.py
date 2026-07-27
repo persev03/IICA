@@ -41,6 +41,22 @@ class ChargingAccess(str, Enum):
     WORK = "work"
 
 
+class PreferenceCriterion(str, Enum):
+    """Criterio personal que puede cambiar el peso de la recomendación."""
+
+    AFFORDABILITY = "affordability"
+    FUEL_EFFICIENCY = "fuel_efficiency"
+    INTERIOR_SPACE = "interior_space"
+    SAFETY = "safety"
+    TECHNOLOGY = "technology"
+    RELIABILITY = "reliability"
+    RESALE = "resale"
+    MOBILITY_EXEMPTION = "mobility_exemption"
+
+
+DEFAULT_PREFERENCE_ORDER = tuple(PreferenceCriterion)
+
+
 class Classification(str, Enum):
     """Clasificación de compra derivada del único resultado IICA."""
 
@@ -120,6 +136,7 @@ class BuyerProfile:
     household_size: int
     frequent_road_trips: bool
     charging_access: ChargingAccess
+    preference_order: tuple[PreferenceCriterion, ...] = DEFAULT_PREFERENCE_ORDER
 
     def __post_init__(self) -> None:
         if len(self.country_code) != 2 or not self.country_code.isalpha():
@@ -132,6 +149,12 @@ class BuyerProfile:
             raise ValueError("ownership_years debe ser al menos 1.")
         if self.household_size < 1:
             raise ValueError("household_size debe ser al menos 1.")
+        if len(self.preference_order) != len(PreferenceCriterion) or set(
+            self.preference_order
+        ) != set(PreferenceCriterion):
+            raise ValueError(
+                "preference_order debe contener cada criterio exactamente una vez."
+            )
         object.__setattr__(self, "country_code", self.country_code.upper())
         object.__setattr__(self, "city_code", self.city_code.strip())
 
@@ -179,7 +202,7 @@ class EnvironmentProfile:
     annual_vehicle_tax: Money
     purchase_incentive: Money
     mobility_restriction_days_per_month: int
-    has_electric_exemption: bool
+    has_mobility_exemption: bool
     public_charging_points: int
 
     def __post_init__(self) -> None:
@@ -269,11 +292,17 @@ class EvaluationExplanation:
     weaknesses: Sequence[str]
     influences: Sequence[Influence]
     recommendations: Sequence[str]
+    priority_insights: Sequence[str] = ()
 
     def __post_init__(self) -> None:
         if not self.influences:
             raise ValueError("La explicación debe tener al menos una influencia.")
-        entries = (*self.strengths, *self.weaknesses, *self.recommendations)
+        entries = (
+            *self.strengths,
+            *self.weaknesses,
+            *self.recommendations,
+            *self.priority_insights,
+        )
         if any(not item.strip() for item in entries):
             raise ValueError("La explicación no puede contener textos vacíos.")
 

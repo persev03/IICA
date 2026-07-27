@@ -15,6 +15,7 @@ from iica_engine import (
     MarketProfile,
     Money,
     Powertrain,
+    PreferenceCriterion,
     Score,
     VehicleProfile,
     VehicleUse,
@@ -38,6 +39,7 @@ from presentation.http.schemas import (
     EvaluationInfluenceResponse,
     EvaluationRequest,
     EvaluationResponse,
+    MobilityRuleResponse,
 )
 
 
@@ -52,7 +54,7 @@ def evaluate_vehicles(
     user_id: str | None = None,
     today: date | None = None,
 ) -> EvaluationResponse:
-    """Evalúa hasta dos versiones usando únicamente registros versionados."""
+    """Evalúa las versiones seleccionadas usando únicamente registros versionados."""
 
     evaluation_date = today or datetime.now(UTC).date()
     city = session.scalar(
@@ -113,6 +115,9 @@ def evaluate_vehicles(
         household_size=payload.household_size,
         frequent_road_trips=payload.frequent_road_trips,
         charging_access=charging_access,
+        preference_order=tuple(
+            PreferenceCriterion(criterion) for criterion in payload.preference_order
+        ),
     )
     engine = DeterministicIicaEngine()
     results: list[EvaluatedVehicleResponse] = []
@@ -219,9 +224,7 @@ def _evaluate_one(
         annual_vehicle_tax=Money(annual_tax, version.currency_code),
         purchase_incentive=Money(incentive, version.currency_code),
         mobility_restriction_days_per_month=restriction.restricted_days_per_month,
-        has_electric_exemption=(
-            powertrain == Powertrain.ELECTRIC and restriction.exemption
-        ),
+        has_mobility_exemption=restriction.exemption,
         public_charging_points=infrastructure.public_charging_points,
     )
     output = engine.evaluate(
@@ -250,8 +253,49 @@ def _evaluate_one(
             for influence in output.explanation.influences
         ],
         recommendations=list(output.explanation.recommendations),
+        priority_insights=list(output.explanation.priority_insights),
+        mobility_rule=_mobility_rule_response(restriction, city.name),
         engine_version=output.engine_version,
         data_version=output.data_version,
+    )
+
+
+def _mobility_rule_response(
+    restriction: MobilityRestriction, city_name: str
+) -> MobilityRuleResponse:
+    conditions: list[str] = []
+    if restriction.conditions.get("runt_registration_required") in {True, "true"}:
+        conditions.append(
+            "La condición de híbrido o eléctrico debe figurar correctamente en el RUNT."
+        )
+    if restriction.exemption:
+        status = "exempt"
+        title = f"Sí tiene excepción de pico y placa en {city_name}"
+        explanation = (
+            "La regla vigente registra esta motorización como exenta. "
+            "La exención se incluyó favorablemente en el cálculo IICA."
+        )
+    elif restriction.restricted_days_per_month > 0:
+        status = "restricted"
+        title = f"No tiene excepción de pico y placa en {city_name}"
+        explanation = (
+            "La regla vigente aplica restricciones a esta motorización. "
+            "El impacto se descontó en el cálculo IICA."
+        )
+    else:
+        status = "not_restricted"
+        title = f"No registra restricción de pico y placa en {city_name}"
+        explanation = (
+            "La regla vigente no asigna días restringidos a esta motorización."
+        )
+    return MobilityRuleResponse(
+        status=status,
+        title=title,
+        explanation=explanation,
+        conditions=conditions,
+        effective_from=restriction.effective_from,
+        effective_to=restriction.effective_to,
+        source_url=restriction.source_url,
     )
 
 

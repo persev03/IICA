@@ -66,7 +66,65 @@ type BuyerProfile = {
   householdSize: number;
   frequentRoadTrips: boolean;
   chargingAccess: string;
+  preferenceOrder: PreferenceCriterion[];
 };
+
+type PreferenceCriterion =
+  | 'affordability'
+  | 'fuel_efficiency'
+  | 'interior_space'
+  | 'safety'
+  | 'technology'
+  | 'reliability'
+  | 'resale'
+  | 'mobility_exemption';
+
+const preferenceOptions: {
+  id: PreferenceCriterion;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: 'affordability',
+    label: 'Presupuesto y costo total',
+    description: 'Precio, impuestos, incentivos y depreciación.',
+  },
+  {
+    id: 'fuel_efficiency',
+    label: 'Rendimiento y consumo',
+    description: 'Eficiencia esperada según motorización y forma de uso.',
+  },
+  {
+    id: 'safety',
+    label: 'Seguridad',
+    description: 'Evidencia independiente disponible para la versión.',
+  },
+  {
+    id: 'interior_space',
+    label: 'Espacio interior',
+    description: 'Capacidad para las personas que usarán el vehículo.',
+  },
+  {
+    id: 'mobility_exemption',
+    label: 'Pico y placa y movilidad',
+    description: 'Exenciones o restricciones vigentes en tu ciudad.',
+  },
+  {
+    id: 'reliability',
+    label: 'Garantía y respaldo',
+    description: 'Cobertura y experiencia documentada de propietarios.',
+  },
+  {
+    id: 'technology',
+    label: 'Tecnología de propulsión',
+    description: 'Electrificación, carga e infraestructura disponible.',
+  },
+  {
+    id: 'resale',
+    label: 'Facilidad de reventa',
+    description: 'Liquidez y comportamiento observado en el mercado.',
+  },
+];
 
 type EvaluationResult = {
   id: string;
@@ -77,6 +135,16 @@ type EvaluationResult = {
   weaknesses: string[];
   influences: { key: string; direction: number; summary: string }[];
   recommendations: string[];
+  priority_insights?: string[];
+  mobility_rule?: {
+    status: 'exempt' | 'restricted' | 'not_restricted';
+    title: string;
+    explanation: string;
+    conditions: string[];
+    effective_from: string;
+    effective_to: string | null;
+    source_url: string;
+  } | null;
   engine_version: string;
   data_version: string;
 };
@@ -125,6 +193,9 @@ export default function CalculatorPage() {
   >('empty');
   const [ownershipYears, setOwnershipYears] = useState(5);
   const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
+  const [preferenceOrder, setPreferenceOrder] = useState<PreferenceCriterion[]>(
+    preferenceOptions.map((option) => option.id),
+  );
   const [mapPlaceCount, setMapPlaceCount] = useState(0);
   const [mobilityEstimate, setMobilityEstimate] = useState<{
     annualKilometers: number | null;
@@ -257,6 +328,7 @@ export default function CalculatorPage() {
       householdSize: Number(data.get('household-size')),
       frequentRoadTrips: data.get('frequent-road-trips') === 'on',
       chargingAccess: String(data.get('charging-access')),
+      preferenceOrder,
     });
     setEvaluationError('');
     setStep(2);
@@ -289,6 +361,7 @@ export default function CalculatorPage() {
           household_size: profile.householdSize,
           frequent_road_trips: profile.frequentRoadTrips,
           charging_access: profile.chargingAccess,
+          preference_order: profile.preferenceOrder,
           vehicle_ids: selectedVehicles,
         }),
       });
@@ -478,6 +551,76 @@ export default function CalculatorPage() {
                   onPlaceCountChange={updateMapPlaceCount}
                 />
               ) : null}
+              <section
+                className="preference-ranker"
+                aria-labelledby="preference-ranker-title"
+              >
+                <div className="preference-heading">
+                  <div>
+                    <span className="form-kicker">Tus prioridades personales</span>
+                    <h2 id="preference-ranker-title">
+                      ¿Qué debe resolver primero tu próximo automóvil?
+                    </h2>
+                  </div>
+                  <p>
+                    Ordena los criterios. El primero tendrá mayor peso en tu IICA y el
+                    resultado explicará cómo respondió cada vehículo.
+                  </p>
+                </div>
+                <ol className="preference-list">
+                  {preferenceOrder.map((criterion, index) => {
+                    const option = preferenceOptions.find(
+                      (candidate) => candidate.id === criterion,
+                    );
+                    if (!option) return null;
+                    return (
+                      <li key={criterion}>
+                        <span className="preference-rank">{index + 1}</span>
+                        <span>
+                          <strong>{option.label}</strong>
+                          <small>{option.description}</small>
+                        </span>
+                        <span className="preference-controls">
+                          <button
+                            type="button"
+                            aria-label={`Subir ${option.label}`}
+                            disabled={index === 0}
+                            onClick={() =>
+                              setPreferenceOrder((current) => {
+                                const next = [...current];
+                                [next[index - 1], next[index]] = [
+                                  next[index],
+                                  next[index - 1],
+                                ];
+                                return next;
+                              })
+                            }
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Bajar ${option.label}`}
+                            disabled={index === preferenceOrder.length - 1}
+                            onClick={() =>
+                              setPreferenceOrder((current) => {
+                                const next = [...current];
+                                [next[index], next[index + 1]] = [
+                                  next[index + 1],
+                                  next[index],
+                                ];
+                                return next;
+                              })
+                            }
+                          >
+                            ↓
+                          </button>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </section>
               {catalogError ? <p className="form-error">{catalogError}</p> : null}
               <label>
                 ¿Cuál será su uso principal?
@@ -655,6 +798,43 @@ export default function CalculatorPage() {
                         <li key={influence.key}>{influence.summary}</li>
                       ))}
                     </ul>
+                    {result.priority_insights?.length ? (
+                      <>
+                        <h4>Cómo respondió a tus prioridades</h4>
+                        <ol className="priority-insights">
+                          {result.priority_insights.map((insight) => (
+                            <li key={insight}>{insight}</li>
+                          ))}
+                        </ol>
+                      </>
+                    ) : null}
+                    {result.mobility_rule ? (
+                      <section
+                        className={`mobility-rule mobility-rule--${result.mobility_rule.status}`}
+                        aria-label={`Pico y placa para ${result.name}`}
+                      >
+                        <span>Pico y placa</span>
+                        <h4>{result.mobility_rule.title}</h4>
+                        <p>{result.mobility_rule.explanation}</p>
+                        {result.mobility_rule.conditions.map((condition) => (
+                          <small key={condition}>{condition}</small>
+                        ))}
+                        <small>
+                          Vigente desde {result.mobility_rule.effective_from}
+                          {result.mobility_rule.effective_to
+                            ? ` hasta ${result.mobility_rule.effective_to}`
+                            : ''}
+                          .
+                        </small>
+                        <a
+                          href={result.mobility_rule.source_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Consultar fuente oficial ↗
+                        </a>
+                      </section>
+                    ) : null}
                     {result.weaknesses.length ? (
                       <>
                         <h4>Debes considerar</h4>

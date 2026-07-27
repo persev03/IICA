@@ -261,9 +261,17 @@ class EvaluationIntegrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["city"], "Bogotá")
-        self.assertEqual(payload["results"][0]["score"], "74.35")
+        self.assertEqual(payload["results"][0]["score"], "78.07")
         self.assertEqual(payload["results"][0]["classification"], "Buena compra")
         self.assertTrue(payload["results"][0]["influences"])
+        self.assertTrue(payload["results"][0]["priority_insights"])
+        self.assertEqual(
+            payload["results"][0]["mobility_rule"]["status"], "restricted"
+        )
+        self.assertIn(
+            "No tiene excepción",
+            payload["results"][0]["mobility_rule"]["title"],
+        )
 
     def test_authenticated_user_can_reopen_saved_evaluations(self) -> None:
         app.dependency_overrides[optional_user_id] = lambda: "user-verified"
