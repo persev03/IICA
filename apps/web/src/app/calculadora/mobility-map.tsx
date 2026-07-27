@@ -485,8 +485,9 @@ export function MobilityMap({
     searchRequestRef.current = controller;
     setSearching(true);
     setSearchResults([]);
-    setManualFallbackAvailable(false);
+    setManualFallbackAvailable(true);
     setSearchStatus(`Buscando “${normalizedQuery}” en ${cityName}…`);
+    const timeout = window.setTimeout(() => controller.abort('search-timeout'), 8000);
     try {
       const response = await fetch(`${apiUrl}/v1/places/search`, {
         method: 'POST',
@@ -506,14 +507,25 @@ export function MobilityMap({
           ? 'Elige el resultado correcto; no seleccionaremos uno por ti.'
           : 'No encontramos coincidencias. Prueba con dirección, barrio y municipio.',
       );
-    } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
+    } catch {
+      if (controller.signal.aborted) {
+        if (
+          controller.signal.reason === 'search-timeout' &&
+          searchRequestRef.current === controller
+        ) {
+          setSearchStatus(
+            'La búsqueda tardó demasiado. Puedes intentarlo de nuevo o ubicar el lugar manualmente.',
+          );
+        }
+        return;
+      }
       setSearchStatus(
         'No pudimos consultar el buscador. Espera un momento e intenta de nuevo.',
       );
       setManualFallbackAvailable(true);
     } finally {
-      if (!controller.signal.aborted) setSearching(false);
+      window.clearTimeout(timeout);
+      if (searchRequestRef.current === controller) setSearching(false);
     }
   }
 
@@ -561,6 +573,9 @@ export function MobilityMap({
   function startManualPlacement() {
     const name = query.trim();
     if (name.length < 3) return;
+    searchRequestRef.current?.abort('manual-placement');
+    searchRequestRef.current = null;
+    setSearching(false);
     manualPlacementRef.current = { name, category };
     setManualPlacementActive(true);
     setSearchResults([]);
@@ -706,6 +721,9 @@ export function MobilityMap({
                   autoComplete="off"
                   placeholder={`Ej. Parque del Poblado, ${cityName}`}
                   onChange={(event) => {
+                    searchRequestRef.current?.abort('query-changed');
+                    searchRequestRef.current = null;
+                    setSearching(false);
                     setQuery(event.target.value);
                     setManualFallbackAvailable(false);
                     if (manualPlacementRef.current) cancelManualPlacement();
@@ -752,7 +770,11 @@ export function MobilityMap({
                 onClick={startManualPlacement}
               >
                 <strong>¿No aparece “{query.trim()}”?</strong>
-                <span>Ubícalo con un clic exacto sobre el mapa →</span>
+                <span>
+                  {searching
+                    ? 'No esperes: ubícalo ahora con un clic exacto sobre el mapa →'
+                    : 'Ubícalo con un clic exacto sobre el mapa →'}
+                </span>
               </button>
             ) : null}
           </div>
